@@ -1,0 +1,7 @@
+.vscode/
+build/
+vgcore*
+*.o
+*.out
+*.log
+renderer
