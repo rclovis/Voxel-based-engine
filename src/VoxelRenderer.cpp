@@ -35,7 +35,6 @@ void VoxelRenderer::init(GLFWwindow* window)
     std::cout << LOG_VOXEL("Init VoxelRenderer");
     _window = window;
     glGenVertexArrays(1, &_VAO);
-
     _shaderProgram = LoadShaders("shader/vertexShader.glsl", "shader/fragmentShader.glsl");
 
     initCamera();
@@ -44,7 +43,7 @@ void VoxelRenderer::init(GLFWwindow* window)
     _faces = {};
     _color_buffer = {};
 
-    const int GRID_SIZE = 32;
+    int GRID_SIZE = 64;
 
     Voxel voxels[GRID_SIZE][GRID_SIZE][GRID_SIZE];
     for (int x = 0; x < GRID_SIZE; x++) {
@@ -84,47 +83,25 @@ void VoxelRenderer::initCamera()
 {
     _matrix = glGetUniformLocation(_shaderProgram, "MVP");
 
-    // Projection matrix : 45� Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
     glm::mat4 _projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-    // Or, for an ortho camera :
-    //glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
-
 
     _camera_position = glm::vec3(2.0f, 2.0f, 5.0f);  // Initial camera position
 	_camera_direction = glm::vec3(-0.5f, -0.5f, -1.0f);  // Initial camera direction
 	_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);  // Up vector (usually (0,1,0))
 
-    // Camera matrix
     _view = glm::lookAt(
         _camera_position, // Camera is at (4,3,3), in World Space
         _camera_position + _camera_direction, // and looks at the origin
         _up_vector  // Head is up (set to 0,-1,0 to look upside-down)
     );
 
-    // // Model matrix : an identity matrix (model will be at the origin)
     glm::mat4 Model = glm::mat4(1.0f);
-    // // Our ModelViewProjection : multiplication of our 3 matrices
 
     _proj = _projection * _view * Model;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    _camera_position = glm::vec3(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, -100.0f);  // Initial camera position
+    _camera_position = glm::vec3(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0.0f);  // Initial camera position
 	_camera_direction = glm::vec3(0.0f, 0.0f, 1.0f);  // Initial camera direction
 	_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);  // Up vector (usually (0,1,0))
-
-
 }
 
 void VoxelRenderer::draw ()

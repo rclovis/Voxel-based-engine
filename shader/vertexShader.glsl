@@ -25,3 +25,4 @@ void main()
     cameraPosition = camera_position;
     cameraDirection = MVP;
 }
+
