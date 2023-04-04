@@ -2,6 +2,7 @@
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
+#define GRID_SIZE 100
 
 VoxelRenderer::~VoxelRenderer ()
 {
@@ -43,13 +44,20 @@ void VoxelRenderer::init(GLFWwindow* window)
     _faces = {};
     _color_buffer = {};
 
-    int GRID_SIZE = 64;
+    // Voxel ***voxels = new Voxel**[GRID_SIZE];
+    // for (int i = 0; i < GRID_SIZE; i++) {
+    //     voxels[i] = new Voxel*[GRID_SIZE];
+    //     for (int j = 0; j < GRID_SIZE; j++) {
+    //         voxels[i][j] = new Voxel[GRID_SIZE];
+    //     }
+    // }
 
-    Voxel voxels[GRID_SIZE][GRID_SIZE][GRID_SIZE];
+    std::vector<Voxel> voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
+
     for (int x = 0; x < GRID_SIZE; x++) {
         for (int y = 0; y < GRID_SIZE; y++) {
             for (int z = 0; z < GRID_SIZE; z++) {
-                voxels[x][y][z] = {
+                voxels[(z * GRID_SIZE * GRID_SIZE) + (y * GRID_SIZE) + x] = {
                     // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
                     // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
                     // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
@@ -78,9 +86,7 @@ void VoxelRenderer::init(GLFWwindow* window)
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, GRID_SIZE, 0, GL_RGBA, GL_FLOAT, voxels);
-    // glTexSubImage3D(GL_TEXTURE_3D, 0, 0, 0, 0, GRID_SIZE, GRID_SIZE, GRID_SIZE, GL_RGBA, GL_UNSIGNED_BYTE, voxels);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, GRID_SIZE, 0, GL_RGBA, GL_FLOAT, voxels.data());
 }
 
 void VoxelRenderer::initCamera()

@@ -10,6 +10,7 @@
 #include <logger.hpp>
 #include <unordered_map>
 
+
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 
 struct Voxel {
