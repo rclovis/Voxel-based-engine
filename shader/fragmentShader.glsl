@@ -11,27 +11,25 @@ const int GRID_SIZE = 64;
 const float VOXEL_SIZE = 50;
 const int MAX_RAY_STEPS = 100;
 
-const vec3 sunPosition = vec3(0, 0, 0);
+const vec3 sunPosition = (vec3(1, 1, 1));
 
-
-vec4 raycast(vec3 rayPos, vec3 rayDir, out float distance)
+float raycastLignt2(vec3 rayPos, vec3 rayDir)
 {
-    rayPos = rayPos / VOXEL_SIZE;
+    // rayPos = rayPos / VOXEL_SIZE;
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
     vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+    float opacity = 1;
 
     for (int i = 0; i < MAX_RAY_STEPS; i++) {
-        if (mapPos.x >= 0 && mapPos.x <= (GRID_SIZE - 1) &&
-            mapPos.y >= 0 && mapPos.y <= (GRID_SIZE - 1) &&
-            mapPos.z >= 0 && mapPos.z <= (GRID_SIZE - 1)) {
-            vec4 val = texture(voxelTexture, (vec3(mapPos) + 0.5) / float(GRID_SIZE));
-            if (val.w == 1) {
-                distance = sqrt((mapPos.x - rayPos.x) * (mapPos.x - rayPos.x) +
-                                (mapPos.y - rayPos.y) * (mapPos.y - rayPos.y) +
-                                (mapPos.z - rayPos.z) * (mapPos.z - rayPos.z)) * VOXEL_SIZE;
-                return val;
+        if (mapPos.x >= 0 && mapPos.x <= (GRID_SIZE) &&
+            mapPos.y >= 0 && mapPos.y <= (GRID_SIZE) &&
+            mapPos.z >= 0 && mapPos.z <= (GRID_SIZE) && i > 2) {
+            vec4 val = texture(voxelTexture, (vec3(mapPos)) / float(GRID_SIZE));
+            opacity *= (1 - val.w);
+            if (opacity <= 0.01) {
+                return opacity;
             }
         }
         if (sideDist.x < sideDist.y) {
@@ -52,8 +50,62 @@ vec4 raycast(vec3 rayPos, vec3 rayDir, out float distance)
             }
         }
     }
-    return vec4(0, 0, 0, 0);
+    return opacity;
 }
+
+
+vec4 raycast(vec3 rayPos, vec3 rayDir, out float distance)
+{
+    rayPos = rayPos / VOXEL_SIZE;
+    ivec3 mapPos = ivec3(floor(rayPos + 0.));
+    vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
+    ivec3 rayStep = ivec3(sign(rayDir));
+    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+    vec4 finalColor = vec4(0, 0, 0, 0);
+    float lignt2 = 1;
+
+    for (int i = 0; i < MAX_RAY_STEPS; i++) {
+        if (mapPos.x >= 0 && mapPos.x <= (GRID_SIZE) &&
+            mapPos.y >= 0 && mapPos.y <= (GRID_SIZE) &&
+            mapPos.z >= 0 && mapPos.z <= (GRID_SIZE)) {
+            vec4 val = texture(voxelTexture, (vec3(mapPos) + 0.5) / float(GRID_SIZE));
+            if (val.w != 0) {
+                if (finalColor.w == 0) {
+                    lignt2 = raycastLignt2((mapPos), sunPosition);
+                }
+                // lignt2 *= ( raycastLignt2(mapPos, sunPosition));
+                // vec4 light = raycastLignt(vec3(mapPos), normalize(sunPosition - vec3(mapPos)));
+                // float lignt2 = raycastLignt2(vec3(mapPos), normalize(sunPosition - vec3(mapPos)));
+                // val = vec4(val.xyz * (vec3(1, 1, 1) - light.xyz), val.w);
+                // val = vec4(val.xyz * lignt2, val.w);
+                finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), finalColor.w + val.w * (1 - finalColor.w));
+                if (finalColor.w == 1) {
+                    return vec4(finalColor.rbg * lignt2, finalColor.w);
+                }
+            }
+        }
+        if (sideDist.x < sideDist.y) {
+            if (sideDist.x < sideDist.z) {
+                sideDist.x += deltaDist.x;
+                mapPos.x += rayStep.x;
+            } else {
+                sideDist.z += deltaDist.z;
+                mapPos.z += rayStep.z;
+            }
+        } else {
+            if (sideDist.y < sideDist.z) {
+                sideDist.y += deltaDist.y;
+                mapPos.y += rayStep.y;
+            } else {
+                sideDist.z += deltaDist.z;
+                mapPos.z += rayStep.z;
+            }
+        }
+    }
+    return vec4(finalColor.rbg * lignt2, finalColor.w);
+}
+
+
 
 void main()
 {

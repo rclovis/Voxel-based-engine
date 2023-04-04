@@ -50,15 +50,19 @@ void VoxelRenderer::init(GLFWwindow* window)
         for (int y = 0; y < GRID_SIZE; y++) {
             for (int z = 0; z < GRID_SIZE; z++) {
                 voxels[x][y][z] = {
-                    static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? 1.0f : 0.0f
+                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+                    // // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
+                    // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? static_cast<float>(rand()) / static_cast<float>(RAND_MAX) : 0.0f
+                    // // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? 1.0f : 0.0f
 
-                    // (float) ((float) x / GRID_SIZE),
-                    // (float) ((float) y / GRID_SIZE),
-                    // (float) ((float) z / GRID_SIZE),
-                    // 1
+                    (float) ((float) x / GRID_SIZE),
+                    (float) ((float) y / GRID_SIZE),
+                    (float) ((float) z / GRID_SIZE),
+                    (sqrt(pow(x - GRID_SIZE / 2, 2) + pow(y - GRID_SIZE / 2, 2) + pow(z - GRID_SIZE / 2, 2)) < GRID_SIZE / 2) ? 0.1f : 0.0f
+                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
+
                 };
             }
         }
@@ -114,9 +118,7 @@ void VoxelRenderer::draw ()
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_position"), _camera_position.x, _camera_position.y, _camera_position.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_direction"), _camera_direction.x, _camera_direction.y, _camera_direction.z);
 
-
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
 
     glfwGetCursorPos(_window, &_last_x, &_last_y);
     glfwPollEvents();
