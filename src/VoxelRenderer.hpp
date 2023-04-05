@@ -20,13 +20,11 @@ struct Voxel {
   float w;
 };
 
-struct VoxelHash {
-  size_t operator()(const std::tuple<int, int, int>& pos) const {
-    size_t hash = std::get<0>(pos);
-    hash ^= std::get<1>(pos) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    hash ^= std::get<2>(pos) + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-    return hash;
-  }
+struct Chunk {
+  std::vector<Voxel> voxels;
+  int sizeX;
+  int sizeY;
+  int sizeZ;
 };
 
 class VoxelRenderer
@@ -38,6 +36,7 @@ class VoxelRenderer
         void initCamera();
         void updateCamera();
         void draw();
+        Chunk loadVox(const char *path);
 
     protected:
         std::map<char, std::vector<std::string>> _assets;
@@ -49,10 +48,6 @@ class VoxelRenderer
         GLuint _VAO;
         GLuint _shaderProgram;
 
-        // GLuint _vertexbuffer;
-        // GLuint _indexbuffer;
-        // GLuint _colorbuffer;
-        // GLuint _normalbuffer;
 
         GLuint _matrix;
         glm::mat4 _proj;
@@ -71,12 +66,11 @@ class VoxelRenderer
         std::vector<GLfloat> _color_buffer;
         std::vector<GLfloat> _normal;
 
-        GLuint _textureID;
+        Chunk _chunk;
 
+        GLuint _textureID;
 
         double _last_x;
         double _last_y;
-
-        std::unordered_map<std::tuple<int, int, int>, Voxel, VoxelHash> _voxelMap;
 };
 

@@ -52,29 +52,37 @@ void VoxelRenderer::init(GLFWwindow* window)
     //     }
     // }
 
-    std::vector<Voxel> voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
+    // Chunk chunk;
+    // chunk.sizeX = GRID_SIZE;
+    // chunk.sizeY = GRID_SIZE;
+    // chunk.sizeZ = GRID_SIZE;
 
-    for (int x = 0; x < GRID_SIZE; x++) {
-        for (int y = 0; y < GRID_SIZE; y++) {
-            for (int z = 0; z < GRID_SIZE; z++) {
-                voxels[(z * GRID_SIZE * GRID_SIZE) + (y * GRID_SIZE) + x] = {
-                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-                    // // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
-                    // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? static_cast<float>(rand()) / static_cast<float>(RAND_MAX) : 0.0f
-                    // // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? 1.0f : 0.0f
+    // chunk.voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
 
-                    (float) ((float) x / GRID_SIZE),
-                    (float) ((float) y / GRID_SIZE),
-                    (float) ((float) z / GRID_SIZE),
-                    (sqrt(pow(x - GRID_SIZE / 2, 2) + pow(y - GRID_SIZE / 2, 2) + pow(z - GRID_SIZE / 2, 2)) < GRID_SIZE / 2) ? 0.1f : 0.0f
-                    // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
+    // for (int x = 0; x < GRID_SIZE; x++) {
+    //     for (int y = 0; y < GRID_SIZE; y++) {
+    //         for (int z = 0; z < GRID_SIZE; z++) {
+    //             chunk.voxels[(z * GRID_SIZE * GRID_SIZE) + (y * GRID_SIZE) + x] = {
+    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
+    //                 // // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
+    //                 // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? static_cast<float>(rand()) / static_cast<float>(RAND_MAX) : 0.0f
+    //                 // // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? 1.0f : 0.0f
 
-                };
-            }
-        }
-    }
+    //                 (float) ((float) x / GRID_SIZE),
+    //                 (float) ((float) y / GRID_SIZE),
+    //                 (float) ((float) z / GRID_SIZE),
+    //                 (sqrt(pow(x - GRID_SIZE / 2, 2) + pow(y - GRID_SIZE / 2, 2) + pow(z - GRID_SIZE / 2, 2)) < GRID_SIZE / 2) ? 1.0f : 0.0f
+    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
+
+    //             };
+    //         }
+    //     }
+    // }
+
+    Chunk chunk = loadVox("assets/Temple.vox");
+
 
 
     glGenTextures(1, &_textureID);
@@ -86,7 +94,7 @@ void VoxelRenderer::init(GLFWwindow* window)
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, GRID_SIZE, GRID_SIZE, GRID_SIZE, 0, GL_RGBA, GL_FLOAT, voxels.data());
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, chunk.sizeX, chunk.sizeY, chunk.sizeZ, 0, GL_RGBA, GL_FLOAT, chunk.voxels.data());
 }
 
 void VoxelRenderer::initCamera()
@@ -123,6 +131,7 @@ void VoxelRenderer::draw ()
     glUniformMatrix4fv(_matrix, 1, GL_FALSE, &_proj[0][0]);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_position"), _camera_position.x, _camera_position.y, _camera_position.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_direction"), _camera_direction.x, _camera_direction.y, _camera_direction.z);
+    glUniform3f(glGetUniformLocation(_shaderProgram, "texture_size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -164,8 +173,6 @@ void VoxelRenderer::updateCamera ()
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     _camera_direction = glm::normalize(direction);
 
-    // std::cout << _camera_direction.x << " " << _camera_direction.y << " " << _camera_direction.z << std::endl;
-
 
     glm::vec3 up_vector = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -192,4 +199,116 @@ void VoxelRenderer::updateCamera ()
     glm::mat4 Model = glm::mat4(1.0f);
 	_projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
     _proj = _projection * _view * Model;
+}
+
+Chunk VoxelRenderer::loadVox(const char *path)
+{
+    //load a .vox file
+    FILE *file = fopen(path, "rb");
+    if (file == NULL) {
+        printf("Error: Could not open file %s\n", path);
+    }
+
+    //read the header
+    char header[4];
+    fread(header, 4, 1, file);
+    if (strncmp(header, "VOX ", 4) != 0) {
+        printf("Error: File %s is not a valid .vox file\n", path);
+    }
+
+    //read the version
+    int version;
+    fread(&version, 4, 1, file);
+    if (version != 150) {
+        printf("Error: File %s is not a valid .vox file\n", path);
+    }
+
+    // read the main chunk
+    char chunkID[4];
+    int chunkContentBytes;
+    int chunkChildrenBytes;
+    fread(chunkID, 4, 1, file);
+    fread(&chunkContentBytes, 4, 1, file);
+    fread(&chunkChildrenBytes, 4, 1, file);
+
+    int tmp = chunkChildrenBytes;
+
+    // std::cout << "chunkID: " << chunkChildrenBytes << std::endl;
+
+    if (strncmp(chunkID, "MAIN", 4) != 0) {
+        printf("Error: File %s is not a valid .vox file\n", path);
+    }
+
+
+    Chunk chunk;
+    std::vector<Voxel> palette;
+    int numVoxels;
+
+    //get current position in file
+    long pos = ftell(file);
+    for (int i = 0; i < chunkChildrenBytes; i++) {
+        char chunkID[4];
+        int chunkContentBytes;
+        int chunkChildrenBytes;
+        fread(chunkID, 4, 1, file);
+        fread(&chunkContentBytes, 4, 1, file);
+        fread(&chunkChildrenBytes, 4, 1, file);
+        if (strncmp(chunkID, "RGBA", 4) == 0) {
+            //read the palette
+            printf("chunkContentBytes: %d chunkChildrenBytes: %d chunkID: %s\n", chunkContentBytes, chunkChildrenBytes, chunkID);
+            for (int i = 0; i < chunkContentBytes / 4; i += 1) {
+                unsigned char r, g, b, a;
+                fread(&r, 1, 1, file);
+                fread(&g, 1, 1, file);
+                fread(&b, 1, 1, file);
+                fread(&a, 1, 1, file);
+                palette.push_back({r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f});
+            }
+            break;
+        } else {
+            fseek(file, chunkContentBytes + chunkChildrenBytes, SEEK_CUR);
+        }
+    }
+    fseek(file, pos, SEEK_SET);
+
+    for (int i = 0; i < chunkChildrenBytes; i++) {
+        char chunkID[4];
+        int chunkContentBytes;
+        int chunkChildrenBytes;
+        fread(chunkID, 4, 1, file);
+        fread(&chunkContentBytes, 4, 1, file);
+        fread(&chunkChildrenBytes, 4, 1, file);
+
+        if (strncmp(chunkID, "SIZE", 4) == 0) {
+            fread(&chunk.sizeX, 4, 1, file);
+            fread(&chunk.sizeY, 4, 1, file);
+            fread(&chunk.sizeZ, 4, 1, file);
+            chunk.voxels = std::vector<Voxel>(chunk.sizeX * chunk.sizeY * chunk.sizeZ);
+            numVoxels = chunk.sizeX * chunk.sizeY * chunk.sizeZ;
+            for (int i = 0; i < numVoxels; i++) {
+                chunk.voxels[i].r = 0;
+                chunk.voxels[i].g = 0;
+                chunk.voxels[i].b = 0;
+                chunk.voxels[i].w = 0;
+            }
+        } else if (strncmp(chunkID, "XYZI", 4) == 0) {
+            int numVoxels;
+            fread(&numVoxels, 4, 1, file);
+            for (int i = 0; i < numVoxels; i++) {
+                unsigned char x, y, z, colorIndex;
+                fread(&x, 1, 1, file);
+                fread(&y, 1, 1, file);
+                fread(&z, 1, 1, file);
+                fread(&colorIndex, 1, 1, file);
+                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].r = palette[colorIndex].r;
+                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].g = palette[colorIndex].g;
+                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].b = palette[colorIndex].b;
+                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].w = palette[colorIndex].w;
+            }
+        } else {
+            fseek(file, chunkContentBytes + chunkChildrenBytes, SEEK_CUR);
+        }
+    }
+
+    return chunk;
 }
