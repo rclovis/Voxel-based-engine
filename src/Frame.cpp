@@ -51,8 +51,6 @@ void Frame::init()
     }
     glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-
-    // glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     _voxelRenderer.init(_window);

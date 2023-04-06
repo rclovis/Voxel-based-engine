@@ -90,3 +90,55 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 
 
 
+GLuint LoadComputeShader (const char * computePath)
+{
+    // Create the shaders
+    GLuint ComputeShaderID = glCreateShader(GL_COMPUTE_SHADER);
+
+    // Read the Compute Shader code from the file
+    std::string ComputeShaderCode;
+    std::ifstream ComputeShaderStream(computePath, std::ios::in);
+    if (ComputeShaderStream.is_open()) {
+        std::stringstream sstr;
+        sstr << ComputeShaderStream.rdbuf();
+        ComputeShaderCode = sstr.str();
+        ComputeShaderStream.close();
+    } else {
+        printf("Impossible to open %s.\n", computePath);
+        getchar();
+    }
+
+    GLint Result = GL_FALSE;
+    int InfoLogLength;
+
+    // Compile Compute Shader
+    char const * ComputeSourcePointer = ComputeShaderCode.c_str();
+    glShaderSource(ComputeShaderID, 1, &ComputeSourcePointer , NULL);
+    glCompileShader(ComputeShaderID);
+
+    // Check Compute Shader
+    glGetShaderiv(ComputeShaderID, GL_COMPILE_STATUS, &Result);
+    glGetShaderiv(ComputeShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    if ( InfoLogLength > 0 ){
+        std::vector<char> ComputeShaderErrorMessage(InfoLogLength+1);
+        glGetShaderInfoLog(ComputeShaderID, InfoLogLength, NULL, &ComputeShaderErrorMessage[0]);
+        printf("%s\n", &ComputeShaderErrorMessage[0]);
+    }
+
+    // Link the program
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, ComputeShaderID);
+    glLinkProgram(shaderProgram);
+
+    // Check the program
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &Result);
+    glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    if ( InfoLogLength > 0 ){
+        std::vector<char> ProgramErrorMessage(InfoLogLength+1);
+        glGetProgramInfoLog(shaderProgram, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+        printf("%s\n", &ProgramErrorMessage[0]);
+    }
+    glDetachShader(shaderProgram, ComputeShaderID);
+    glDeleteShader(ComputeShaderID);
+    return shaderProgram;
+}

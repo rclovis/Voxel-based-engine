@@ -12,6 +12,7 @@
 
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
+GLuint LoadComputeShader (const char * computePath);
 
 struct Voxel {
   float r;
@@ -22,7 +23,6 @@ struct Voxel {
 
 struct Chunk {
   std::vector<Voxel> voxels;
-  std::vector<Voxel> shade;
   GLuint _textureColor;
   GLuint _textureShade;
   int sizeX;
@@ -40,7 +40,7 @@ class VoxelRenderer
         void updateCamera();
         void draw();
         void moveSun();
-        void computeLighting(Chunk chunk);
+        void updateShadows();
         Chunk loadVox(const char *path);
 
     protected:
@@ -52,6 +52,7 @@ class VoxelRenderer
         GLFWwindow* _window;
         GLuint _VAO;
         GLuint _shaderProgram;
+        GLuint _computeShader;
 
 
         glm::mat4 _proj;
