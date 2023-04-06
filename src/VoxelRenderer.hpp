@@ -22,6 +22,9 @@ struct Voxel {
 
 struct Chunk {
   std::vector<Voxel> voxels;
+  std::vector<Voxel> shade;
+  GLuint _textureColor;
+  GLuint _textureShade;
   int sizeX;
   int sizeY;
   int sizeZ;
@@ -36,6 +39,8 @@ class VoxelRenderer
         void initCamera();
         void updateCamera();
         void draw();
+        void moveSun();
+        void computeLighting(Chunk chunk);
         Chunk loadVox(const char *path);
 
     protected:
@@ -49,11 +54,12 @@ class VoxelRenderer
         GLuint _shaderProgram;
 
 
-        GLuint _matrix;
         glm::mat4 _proj;
         glm::mat4 _view;
         glm::mat4 _model;
         glm::mat4 _projection;
+        glm::mat4 _sun_tansformation;
+
 
         glm::vec3 _camera_position;
         glm::vec3 _camera_direction;
@@ -68,9 +74,8 @@ class VoxelRenderer
 
         Chunk _chunk;
 
-        GLuint _textureID;
-
         double _last_x;
         double _last_y;
+
 };
 

@@ -24,7 +24,6 @@ VoxelRenderer::VoxelRenderer()
     // _indexbuffer = 0;
     // _colorbuffer = 0;
     // _normalbuffer = 0;
-    _matrix = 0;
     _camera_position = glm::vec3(0, 0, 0);
     _camera_direction = glm::vec3(0, 0, -1);
     _up_vector = glm::vec3(0, 1, 0);
@@ -76,17 +75,29 @@ void VoxelRenderer::init(GLFWwindow* window)
     //                 (sqrt(pow(x - GRID_SIZE / 2, 2) + pow(y - GRID_SIZE / 2, 2) + pow(z - GRID_SIZE / 2, 2)) < GRID_SIZE / 2) ? 1.0f : 0.0f
     //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
 
+
+    //                 // 1,
+    //                 // 1,
+    //                 // 1,
+    //                 // 1
+
     //             };
     //         }
     //     }
     // }
 
-    Chunk chunk = loadVox("assets/Temple.vox");
+    _chunk = loadVox("assets/Temple.vox");
+    computeLighting(_chunk);
 
 
 
-    glGenTextures(1, &_textureID);
-    glBindTexture(GL_TEXTURE_3D, _textureID);
+    glGenTextures(1, &_chunk._textureColor);
+    glGenTextures(1, &_chunk._textureShade);
+
+
+    // glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RGBA, GL_FLOAT, _chunk.voxels.data());
 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -94,12 +105,22 @@ void VoxelRenderer::init(GLFWwindow* window)
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, chunk.sizeX, chunk.sizeY, chunk.sizeZ, 0, GL_RGBA, GL_FLOAT, chunk.voxels.data());
+
+
+
+    // glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RGBA, GL_FLOAT, _chunk.shade.data());
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
 void VoxelRenderer::initCamera()
 {
-    _matrix = glGetUniformLocation(_shaderProgram, "MVP");
 
     glm::mat4 _projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
 
@@ -120,15 +141,26 @@ void VoxelRenderer::initCamera()
     _camera_position = glm::vec3(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, 0.0f);  // Initial camera position
 	_camera_direction = glm::vec3(0.0f, 0.0f, 1.0f);  // Initial camera direction
 	_up_vector = glm::vec3(0.0f, 1.0f, 0.0f);  // Up vector (usually (0,1,0))
+
+    _sun_tansformation = glm::mat4(1.0f);
 }
 
 void VoxelRenderer::draw ()
 {
     glUseProgram(_shaderProgram);
     glBindVertexArray(_VAO);
-    glBindTextureUnit(0, _textureID);
 
-    glUniformMatrix4fv(_matrix, 1, GL_FALSE, &_proj[0][0]);
+    glUniform1i(glGetUniformLocation(_shaderProgram, "voxelTexture"), 0);
+    glUniform1i(glGetUniformLocation(_shaderProgram, "voxelShade"), 1);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
+
+    glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "MVP"), 1, GL_FALSE, &_proj[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_position"), _camera_position.x, _camera_position.y, _camera_position.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_direction"), _camera_direction.x, _camera_direction.y, _camera_direction.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "texture_size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
@@ -138,8 +170,91 @@ void VoxelRenderer::draw ()
     glfwGetCursorPos(_window, &_last_x, &_last_y);
     glfwPollEvents();
     updateCamera();
+    moveSun();
 
 }
+
+void VoxelRenderer::moveSun ()
+{
+    if (glfwGetKey(_window, GLFW_KEY_LEFT) == GLFW_PRESS)
+    {
+        _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        computeLighting(_chunk);
+    }
+    if (glfwGetKey(_window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+    {
+        _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        computeLighting(_chunk);
+    }
+    if (glfwGetKey(_window, GLFW_KEY_UP) == GLFW_PRESS)
+    {
+        _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        computeLighting(_chunk);
+    }
+    if (glfwGetKey(_window, GLFW_KEY_DOWN) == GLFW_PRESS)
+    {
+        _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        computeLighting(_chunk);
+    }
+
+    // std::cout << "Sun position: " << (_sun_tansformation * glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)).a << " "
+    //     << (_sun_tansformation * glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)).g << " "
+    //     << (_sun_tansformation * glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)).b
+    //     << std::endl;
+
+}
+
+void VoxelRenderer::computeLighting(Chunk chunk)
+{
+    glm::vec4 tmp = (glm::vec4(0, 0, 1, 1) * _sun_tansformation);
+    glm::vec3 rayDir = glm::normalize(glm::vec3(tmp.x, tmp.y, tmp.z));
+
+    for (int i = 0;i < chunk.sizeX * chunk.sizeY * chunk.sizeZ;i++)
+    {
+        // if (chunk.voxels[i].w == 0)
+        //     continue;
+        // glm::vec3 rayPos = glm::vec3(i % chunk.sizeX, (i / chunk.sizeX) % chunk.sizeY, i / (chunk.sizeX * chunk.sizeY));
+        // glm::ivec3 mapPos = glm::ivec3(floor(rayPos));
+        // glm::vec3 deltaDist = glm::abs(glm::vec3(glm::length(rayDir)) / rayDir);
+        // glm::ivec3 rayStep = glm::ivec3(sign(rayDir));
+        // glm::vec3 sideDist = (glm::sign(rayDir) * (glm::vec3(mapPos) - rayPos) + (glm::vec3(glm::sign(rayDir).x * 0.5 + 0.5, glm::sign(rayDir).y * 0.5 + 0.5, glm::sign(rayDir).z * 0.5 + 0.5))) * deltaDist;
+        // float opacity = 1;
+
+        // for (int i = 0; i < 200; i++) {
+        //     if (mapPos.x >= 0 && mapPos.x <= (chunk.sizeX) &&
+        //         mapPos.y >= 0 && mapPos.y <= (chunk.sizeY) &&
+        //         mapPos.z >= 0 && mapPos.z <= (chunk.sizeZ) && i != 0) {
+        //         Voxel val = chunk.voxels[mapPos.z * chunk.sizeX * chunk.sizeY + mapPos.y * chunk.sizeX + mapPos.x];
+        //         val.w /= 6;
+        //         opacity *= (1 - val.w);
+        //         if (opacity <= 0.2) {
+        //             chunk.shade[i] = opacity;
+        //             // printf("opacity: %f\n", opacity);
+        //             break;
+        //         }
+        //     }
+        //     if (sideDist.x < sideDist.y) {
+        //         if (sideDist.x < sideDist.z) {
+        //             sideDist.x += deltaDist.x;
+        //             mapPos.x += rayStep.x;
+        //         } else {
+        //             sideDist.z += deltaDist.z;
+        //             mapPos.z += rayStep.z;
+        //         }
+        //     } else {
+        //         if (sideDist.y < sideDist.z) {
+        //             sideDist.y += deltaDist.y;
+        //             mapPos.y += rayStep.y;
+        //         } else {
+        //             sideDist.z += deltaDist.z;
+        //             mapPos.z += rayStep.z;
+        //         }
+        //     }
+        // }
+        chunk.shade[i] = {1, 1, 1, 1};
+    }
+}
+
 
 void VoxelRenderer::updateCamera ()
 {
@@ -269,6 +384,30 @@ Chunk VoxelRenderer::loadVox(const char *path)
             fseek(file, chunkContentBytes + chunkChildrenBytes, SEEK_CUR);
         }
     }
+    if (palette.size() != 256) {
+        unsigned int colors[256] = {
+            0x00000000, 0xffffffff, 0xffccffff, 0xff99ffff, 0xff66ffff, 0xff33ffff, 0xff00ffff, 0xffffccff, 0xffccccff, 0xff99ccff, 0xff66ccff, 0xff33ccff, 0xff00ccff, 0xffff99ff, 0xffcc99ff, 0xff9999ff,
+            0xff6699ff, 0xff3399ff, 0xff0099ff, 0xffff66ff, 0xffcc66ff, 0xff9966ff, 0xff6666ff, 0xff3366ff, 0xff0066ff, 0xffff33ff, 0xffcc33ff, 0xff9933ff, 0xff6633ff, 0xff3333ff, 0xff0033ff, 0xffff00ff,
+            0xffcc00ff, 0xff9900ff, 0xff6600ff, 0xff3300ff, 0xff0000ff, 0xffffffcc, 0xffccffcc, 0xff99ffcc, 0xff66ffcc, 0xff33ffcc, 0xff00ffcc, 0xffffcccc, 0xffcccccc, 0xff99cccc, 0xff66cccc, 0xff33cccc,
+            0xff00cccc, 0xffff99cc, 0xffcc99cc, 0xff9999cc, 0xff6699cc, 0xff3399cc, 0xff0099cc, 0xffff66cc, 0xffcc66cc, 0xff9966cc, 0xff6666cc, 0xff3366cc, 0xff0066cc, 0xffff33cc, 0xffcc33cc, 0xff9933cc,
+            0xff6633cc, 0xff3333cc, 0xff0033cc, 0xffff00cc, 0xffcc00cc, 0xff9900cc, 0xff6600cc, 0xff3300cc, 0xff0000cc, 0xffffff99, 0xffccff99, 0xff99ff99, 0xff66ff99, 0xff33ff99, 0xff00ff99, 0xffffcc99,
+            0xffcccc99, 0xff99cc99, 0xff66cc99, 0xff33cc99, 0xff00cc99, 0xffff9999, 0xffcc9999, 0xff999999, 0xff669999, 0xff339999, 0xff009999, 0xffff6699, 0xffcc6699, 0xff996699, 0xff666699, 0xff336699,
+            0xff006699, 0xffff3399, 0xffcc3399, 0xff993399, 0xff663399, 0xff333399, 0xff003399, 0xffff0099, 0xffcc0099, 0xff990099, 0xff660099, 0xff330099, 0xff000099, 0xffffff66, 0xffccff66, 0xff99ff66,
+            0xff66ff66, 0xff33ff66, 0xff00ff66, 0xffffcc66, 0xffcccc66, 0xff99cc66, 0xff66cc66, 0xff33cc66, 0xff00cc66, 0xffff9966, 0xffcc9966, 0xff999966, 0xff669966, 0xff339966, 0xff009966, 0xffff6666,
+            0xffcc6666, 0xff996666, 0xff666666, 0xff336666, 0xff006666, 0xffff3366, 0xffcc3366, 0xff993366, 0xff663366, 0xff333366, 0xff003366, 0xffff0066, 0xffcc0066, 0xff990066, 0xff660066, 0xff330066,
+            0xff000066, 0xffffff33, 0xffccff33, 0xff99ff33, 0xff66ff33, 0xff33ff33, 0xff00ff33, 0xffffcc33, 0xffcccc33, 0xff99cc33, 0xff66cc33, 0xff33cc33, 0xff00cc33, 0xffff9933, 0xffcc9933, 0xff999933,
+            0xff669933, 0xff339933, 0xff009933, 0xffff6633, 0xffcc6633, 0xff996633, 0xff666633, 0xff336633, 0xff006633, 0xffff3333, 0xffcc3333, 0xff993333, 0xff663333, 0xff333333, 0xff003333, 0xffff0033,
+            0xffcc0033, 0xff990033, 0xff660033, 0xff330033, 0xff000033, 0xffffff00, 0xffccff00, 0xff99ff00, 0xff66ff00, 0xff33ff00, 0xff00ff00, 0xffffcc00, 0xffcccc00, 0xff99cc00, 0xff66cc00, 0xff33cc00,
+            0xff00cc00, 0xffff9900, 0xffcc9900, 0xff999900, 0xff669900, 0xff339900, 0xff009900, 0xffff6600, 0xffcc6600, 0xff996600, 0xff666600, 0xff336600, 0xff006600, 0xffff3300, 0xffcc3300, 0xff993300,
+            0xff663300, 0xff333300, 0xff003300, 0xffff0000, 0xffcc0000, 0xff990000, 0xff660000, 0xff330000, 0xff0000ee, 0xff0000dd, 0xff0000bb, 0xff0000aa, 0xff000088, 0xff000077, 0xff000055, 0xff000044,
+            0xff000022, 0xff000011, 0xff00ee00, 0xff00dd00, 0xff00bb00, 0xff00aa00, 0xff008800, 0xff007700, 0xff005500, 0xff004400, 0xff002200, 0xff001100, 0xffee0000, 0xffdd0000, 0xffbb0000, 0xffaa0000,
+            0xff880000, 0xff770000, 0xff550000, 0xff440000, 0xff220000, 0xff110000, 0xffeeeeee, 0xffdddddd, 0xffbbbbbb, 0xffaaaaaa, 0xff888888, 0xff777777, 0xff555555, 0xff444444, 0xff222222, 0xff111111
+        };
+        palette.clear();
+        for (int i = 0; i < 255; i++) {
+            palette.push_back({ (uint8_t)(colors[i] >> 24) / 255.0f, (uint8_t)(colors[i] >> 16) /  255.0f, (uint8_t)(colors[i] >> 8) /  255.0f, 1});
+        }
+    }
     fseek(file, pos, SEEK_SET);
 
     for (int i = 0; i < chunkChildrenBytes; i++) {
@@ -284,6 +423,7 @@ Chunk VoxelRenderer::loadVox(const char *path)
             fread(&chunk.sizeY, 4, 1, file);
             fread(&chunk.sizeZ, 4, 1, file);
             chunk.voxels = std::vector<Voxel>(chunk.sizeX * chunk.sizeY * chunk.sizeZ);
+            chunk.shade = std::vector<Voxel>(chunk.sizeX * chunk.sizeY * chunk.sizeZ);
             numVoxels = chunk.sizeX * chunk.sizeY * chunk.sizeZ;
             for (int i = 0; i < numVoxels; i++) {
                 chunk.voxels[i].r = 0;
