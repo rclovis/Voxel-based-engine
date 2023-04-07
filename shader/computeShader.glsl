@@ -3,8 +3,8 @@
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-layout(binding = 0, rgba32f) uniform image3D inputTexture;
-layout(binding = 1, r32f) uniform image3D outputTexture;
+layout(binding = 0, r32f) uniform image3D outputTexture;
+layout(binding = 1, rgba32f) uniform image3D inputTexture;
 
 
 layout (location = 2) uniform mat4 sun_transformation;
@@ -18,6 +18,18 @@ vec3 sunPosition = (vec4(0, 0, 1, 1) * sun_transformation).xyz;
 
 float raycastLignt(vec3 rayPos, vec3 rayDir)
 {
+    if (imageLoad(inputTexture, ivec3(rayPos)).w == 0) {
+        return 1.0f;
+    } else if (imageLoad(inputTexture, ivec3(rayPos + vec3(0, 0, 1))).w == 1 &&
+        imageLoad(inputTexture, ivec3(rayPos + vec3(0, 0, -1))).w == 1 &&
+        imageLoad(inputTexture, ivec3(rayPos + vec3(0, 1, 0))).w == 1 &&
+        imageLoad(inputTexture, ivec3(rayPos + vec3(0, -1, 0))).w == 1 &&
+        imageLoad(inputTexture, ivec3(rayPos + vec3(1, 0, 0))).w == 1 &&
+        imageLoad(inputTexture, ivec3(rayPos + vec3(-1, 0, 0))).w == 1) {
+        return 1.0f;
+    }
+
+
     ivec3 mapPos = ivec3(floor(rayPos + 0.));
     vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
@@ -62,6 +74,9 @@ void main()
     ivec3 texel = ivec3(gl_GlobalInvocationID.xyz);
 
     float result = raycastLignt(texel, sunPosition);
+    
 
+
+    // imageStore(outputTexture, texel, vec4(imageLoad(inputTexture, texel).r, 1.0f, 1.0f, 1.0f));
     imageStore(outputTexture, texel, vec4(result, 1.0f, 1.0f, 1.0f));
 }

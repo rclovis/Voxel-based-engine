@@ -39,17 +39,16 @@ void VoxelRenderer::init(GLFWwindow* window)
     _color_buffer = {};
 
 
-    // Chunk chunk;
-    // chunk.sizeX = GRID_SIZE;
-    // chunk.sizeY = GRID_SIZE;
-    // chunk.sizeZ = GRID_SIZE;
+    // _chunk.sizeX = GRID_SIZE;
+    // _chunk.sizeY = GRID_SIZE;
+    // _chunk.sizeZ = GRID_SIZE;
 
-    // chunk.voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
+    // _chunk.voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
 
     // for (int x = 0; x < GRID_SIZE; x++) {
     //     for (int y = 0; y < GRID_SIZE; y++) {
     //         for (int z = 0; z < GRID_SIZE; z++) {
-    //             chunk.voxels[(z * GRID_SIZE * GRID_SIZE) + (y * GRID_SIZE) + x] = {
+    //             _chunk.voxels[(z * GRID_SIZE * GRID_SIZE) + (y * GRID_SIZE) + x] = {
     //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
     //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
     //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
@@ -86,9 +85,11 @@ void VoxelRenderer::init(GLFWwindow* window)
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RED, GL_FLOAT, NULL);
     glBindImageTexture(0, _chunk._textureShade, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
 
     glGenTextures(1, &_chunk._textureColor);
-    glActiveTexture(GL_TEXTURE1);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -96,6 +97,8 @@ void VoxelRenderer::init(GLFWwindow* window)
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
     glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RGBA, GL_FLOAT, _chunk.voxels.data());
+    glBindImageTexture(1, _chunk._textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindTexture(GL_TEXTURE_3D, 0);
     updateShadows();
 }
 
@@ -151,20 +154,15 @@ void VoxelRenderer::draw ()
     glfwPollEvents();
     updateCamera();
     moveSun();
-
 }
 
 void VoxelRenderer::updateShadows()
 {
     glUseProgram(_computeShader);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "inputTexture"), 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
+    glBindTextureUnit(0, _chunk._textureShade);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "outputTexture"), 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
+    glBindTextureUnit(1, _chunk._textureColor);
 
     glUniformMatrix4fv(glGetUniformLocation(_computeShader, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
 
@@ -172,15 +170,15 @@ void VoxelRenderer::updateShadows()
     glDispatchCompute(_chunk.sizeX , _chunk.sizeY , _chunk.sizeZ);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    // glUniform1i(glGetUniformLocation(_computeShader, "outputTexture"), 0);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
+    glUniform1i(glGetUniformLocation(_computeShader, "outputTexture"), 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
     std::vector<float> textureData = std::vector<float>(_chunk.sizeX * _chunk.sizeY * _chunk.sizeZ);
     glGetTexImage(GL_TEXTURE_3D, 0, GL_RED, GL_FLOAT, textureData.data());
 
-    for (auto i : textureData) {
-        std::cout << i << std::endl;
-    }
+    // for (auto i : textureData) {
+    //     std::cout << i << std::endl;
+    // }
 }
 
 
@@ -188,15 +186,20 @@ void VoxelRenderer::moveSun ()
 {
     if (glfwGetKey(_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        updateShadows();
+
     }
     if (glfwGetKey(_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        updateShadows();
     }
     if (glfwGetKey(_window, GLFW_KEY_UP) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        updateShadows();
     }
     if (glfwGetKey(_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        updateShadows();
     }
 }
 
@@ -369,6 +372,10 @@ Chunk VoxelRenderer::loadVox(const char *path)
             fread(&chunk.sizeX, 4, 1, file);
             fread(&chunk.sizeY, 4, 1, file);
             fread(&chunk.sizeZ, 4, 1, file);
+            // chunk.sizeX += 2;
+            // chunk.sizeY += 2;
+            // chunk.sizeZ += 2;
+
             chunk.voxels = std::vector<Voxel>(chunk.sizeX * chunk.sizeY * chunk.sizeZ);
             numVoxels = chunk.sizeX * chunk.sizeY * chunk.sizeZ;
             for (int i = 0; i < numVoxels; i++) {
@@ -386,10 +393,10 @@ Chunk VoxelRenderer::loadVox(const char *path)
                 fread(&y, 1, 1, file);
                 fread(&z, 1, 1, file);
                 fread(&colorIndex, 1, 1, file);
-                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].r = palette[colorIndex].r;
-                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].g = palette[colorIndex].g;
-                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].b = palette[colorIndex].b;
-                chunk.voxels[x + z * chunk.sizeX + y * chunk.sizeX * chunk.sizeY].w = palette[colorIndex].w;
+                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].r = palette[colorIndex].r;
+                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].g = palette[colorIndex].g;
+                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].b = palette[colorIndex].b;
+                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].w = palette[colorIndex].w;
             }
         } else {
             fseek(file, chunkContentBytes + chunkChildrenBytes, SEEK_CUR);
