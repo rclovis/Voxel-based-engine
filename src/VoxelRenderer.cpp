@@ -39,11 +39,11 @@ void VoxelRenderer::init(GLFWwindow* window)
     _color_buffer = {};
 
 
-    // _chunk.sizeX = GRID_SIZE;
-    // _chunk.sizeY = GRID_SIZE;
-    // _chunk.sizeZ = GRID_SIZE;
+    _chunk.sizeX = GRID_SIZE;
+    _chunk.sizeY = GRID_SIZE;
+    _chunk.sizeZ = GRID_SIZE;
 
-    // _chunk.voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
+    _chunk.voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
 
     // for (int x = 0; x < GRID_SIZE; x++) {
     //     for (int y = 0; y < GRID_SIZE; y++) {
@@ -59,7 +59,7 @@ void VoxelRenderer::init(GLFWwindow* window)
     //                 (float) ((float) x / GRID_SIZE),
     //                 (float) ((float) y / GRID_SIZE),
     //                 (float) ((float) z / GRID_SIZE),
-    //                 (sqrt(pow(x - GRID_SIZE / 2, 2) + pow(y - GRID_SIZE / 2, 2) + pow(z - GRID_SIZE / 2, 2)) < GRID_SIZE / 2) ? 1.0f : 0.0f
+    //                 (sqrt(pow(x - GRID_SIZE / 2, 2) + pow(y - GRID_SIZE / 2, 2) + pow(z - GRID_SIZE / 2, 2)) < GRID_SIZE / 2) ? 0.5f : 0.0f
     //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
 
 
@@ -73,8 +73,8 @@ void VoxelRenderer::init(GLFWwindow* window)
     //     }
     // }
 
-    _chunk = loadVox("assets/Temple.vox");
-    // _chunk = loadVox("assets/untitled.vox");
+    // _chunk = loadVox("assets/Temple.vox");
+    _chunk = loadVox("assets/untitled.vox");
 
     glGenTextures(1, &_chunk._textureShade);
     glActiveTexture(GL_TEXTURE0);
@@ -227,7 +227,7 @@ void VoxelRenderer::updateSdf()
     glUniformMatrix4fv(glGetUniformLocation(_computeShader, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(_computeShader, "size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
     glUniform1i(glGetUniformLocation(_computeShader, "sdf"), 1);
-    glDispatchCompute(_chunk.sizeX , _chunk.sizeY , _chunk.sizeZ);
+    glDispatchCompute(_chunk.sizeX  , _chunk.sizeY  , _chunk.sizeZ );
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glUniform1i(glGetUniformLocation(_computeShader, "sdfTexture"), 2);
@@ -395,8 +395,10 @@ Chunk VoxelRenderer::loadVox(const char *path)
                 fread(&a, 1, 1, file);
 
                 if (r == 255 && g == 255 && b == 255 && a == 255) {
-                    a = 100;
-                    r = 111;
+                    a = 250;
+                    // r = 0;
+                    // g = 0;
+                    // b = 0;
                 }
 
                 palette.push_back({r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f});
