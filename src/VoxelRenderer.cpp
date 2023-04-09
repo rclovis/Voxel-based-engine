@@ -395,10 +395,17 @@ Chunk VoxelRenderer::loadVox(const char *path)
                 fread(&a, 1, 1, file);
 
                 if (r == 255 && g == 255 && b == 255 && a == 255) {
+                    a = 100;
+                    r = 0;
+                    g = 0;
+                    b = 100;
+                }
+
+                if (r == 255 && g == 0 && b == 255 && a == 255) {
                     a = 250;
-                    // r = 0;
-                    // g = 0;
-                    // b = 0;
+                    r = 0;
+                    g = 0;
+                    b = 0;
                 }
 
                 palette.push_back({r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f});
