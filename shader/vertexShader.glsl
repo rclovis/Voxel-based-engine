@@ -13,11 +13,13 @@ vec2 positions[6] = vec2[](
 uniform mat4 MVP;
 uniform mat4 sun_transformation;
 uniform vec3 camera_position;
+uniform vec3 size;
 // uniform vec3 camera_direction;
 
 out vec3 cameraPosition;
 out mat4 cameraDirection;
 out mat4 sunTransformaton;
+out vec3 sizeTexutre;
 
 
 void main()
@@ -27,5 +29,6 @@ void main()
     cameraPosition = camera_position;
     cameraDirection = MVP;
     sunTransformaton = sun_transformation;
+    sizeTexutre = size;
 }
 

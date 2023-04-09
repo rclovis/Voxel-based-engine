@@ -25,6 +25,7 @@ struct Chunk {
   std::vector<Voxel> voxels;
   GLuint _textureColor;
   GLuint _textureShade;
+  GLuint _textureDisance;
   int sizeX;
   int sizeY;
   int sizeZ;
@@ -41,6 +42,7 @@ class VoxelRenderer
         void draw();
         void moveSun();
         void updateShadows();
+        void updateSdf();
         Chunk loadVox(const char *path);
 
     protected:
