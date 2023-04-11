@@ -16,14 +16,13 @@ const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
-vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity)
+vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps)
 {
-    ivec3 mapPos = ivec3(floor(rayPos));
+    ivec3 mapPos = ivec3(rayPos);
     vec3 deltaDist = abs(vec3(1.0) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
     vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
     int multiplicator = 1;
-    int steps = MAX_RAY_STEPS;
 
     while (steps > 0) {
         if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
@@ -98,7 +97,7 @@ bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float c
     return true;
 }
 
-vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, vec3 rayDir)
+vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
 {
     vec4 finalColor = vec4(0, 0, 0, 0);
     vec4 val = texelFetch(voxelTexture, mapPos, 0);
@@ -108,9 +107,9 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, vec3 rayDir)
 
         // vec3 dir = rayDir;
         // vec3 pos = mapPos;
-        vec4 reflection = raycastReflect(pos, reflect(dir, ivec3(mask)), val.w) * (val.w);
+        vec4 reflection = raycastReflect(pos, reflect(dir, ivec3(mask)), val.w, steps) * (val.w);
 
-        vec4 transparency = raycastReflect(pos, dir, val.w) * (1-val.w);
+        vec4 transparency = raycastReflect(pos, dir, val.w, steps) * (1-val.w);
 
         finalColor = vec4(reflection.xyz * val.w + transparency.xyz * (1 - val.w), 1);
 
@@ -133,7 +132,7 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, vec3 rayDir)
 vec4 raycast(vec3 rayPos, vec3 rayDir)
 {
     rayPos = rayPos / VOXEL_SIZE;
-    ivec3 mapPos = ivec3(floor(rayPos));
+    ivec3 mapPos = ivec3(rayPos);
     vec3 deltaDist = abs(vec3(1.0) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
     vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
@@ -149,9 +148,13 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
             mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
             ivec4 sdf = texelFetch(sdfTexture, mapPos, 0);
             if (sdf.r == 0) {
-                return computeColor (mapPos, rayPos, mask, rayDir);
+                return computeColor (mapPos, rayPos, mask, steps);
             } else {
                 multiplicator = sdf.r;
+                // if (multiplicator != 1) {
+                //     mapPos = ivec3(rayPos + (rayDir * (length(vec3(mapPos) - rayPos) + (multiplicator - 1))));
+                //     sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+                // }
             }
         }
         steps -= multiplicator;
@@ -159,22 +162,22 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
         while (u < multiplicator) {
             if (sideDist.x < sideDist.y) {
                 if (sideDist.x < sideDist.z) {
-                    sideDist.x += deltaDist.x; //* multiplicator;
-                    mapPos.x += rayStep.x; //* multiplicator;
+                    sideDist.x += deltaDist.x;
+                    mapPos.x += rayStep.x;
                     mask = ivec3((rayDir.x < 0) ? 1 : -1, 0, 0);
                 } else {
-                    sideDist.z += deltaDist.z; //* multiplicator;
-                    mapPos.z += rayStep.z; //* multiplicator;
+                    sideDist.z += deltaDist.z;
+                    mapPos.z += rayStep.z;
                     mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
                 }
             } else {
                 if (sideDist.y < sideDist.z) {
-                    sideDist.y += deltaDist.y; //* multiplicator;
-                    mapPos.y += rayStep.y; //* multiplicator;
+                    sideDist.y += deltaDist.y;
+                    mapPos.y += rayStep.y;
                     mask = ivec3(0,(rayDir.y < 0) ? 1 : -1, 0);
                 } else {
-                    sideDist.z += deltaDist.z; //* multiplicator;
-                    mapPos.z += rayStep.z; //* multiplicator;
+                    sideDist.z += deltaDist.z;
+                    mapPos.z += rayStep.z;
                     mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
                 }
             }

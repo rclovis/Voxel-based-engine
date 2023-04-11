@@ -94,7 +94,7 @@ void main()
                     if (i < size.x && j < size.y && k < size.z && i >= 0 && j >= 0 && k >= 0) {
                         ivec3 pos = ivec3(i, j, k);
                         int dist = distance_c(pos, texel);
-                        if (imageLoad(sdfTexture, pos).r > dist) {
+                        if (imageAtomicMin(sdfTexture, pos, dist) > dist) {
                             imageStore(sdfTexture, pos, ivec4(dist, 0, 0, 0));
                         }
                     }

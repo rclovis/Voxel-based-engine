@@ -73,8 +73,10 @@ void VoxelRenderer::init(GLFWwindow* window)
     //     }
     // }
 
-    // _chunk = loadVox("assets/Temple.vox");
-    _chunk = loadVox("assets/untitled.vox");
+    _chunk = loadVox("assets/Temple.vox");
+    // _chunk = loadVox("assets/untitled.vox");
+    // _chunk = loadVox("assets/pieta.vox");
+    // _chunk = loadVox("assets/city.vox");
 
     glGenTextures(1, &_chunk._textureShade);
     glActiveTexture(GL_TEXTURE0);
@@ -365,8 +367,6 @@ Chunk VoxelRenderer::loadVox(const char *path)
     fread(&chunkContentBytes, 4, 1, file);
     fread(&chunkChildrenBytes, 4, 1, file);
 
-    int tmp = chunkChildrenBytes;
-
     if (strncmp(chunkID, "MAIN", 4) != 0) {
         printf("Error: File %s is not a valid .vox file\n", path);
     }
@@ -441,6 +441,14 @@ Chunk VoxelRenderer::loadVox(const char *path)
     }
     fseek(file, pos, SEEK_SET);
 
+    std::vector<Voxel> tmp;
+    chunk.sizeX = 0;
+    chunk.sizeY = 0;
+    chunk.sizeZ = 0;
+
+    int sizeX, sizeY, sizeZ;
+    int testxg = 0;
+
     for (int i = 0; i < chunkChildrenBytes; i++) {
         char chunkID[4];
         int chunkContentBytes;
@@ -450,22 +458,23 @@ Chunk VoxelRenderer::loadVox(const char *path)
         fread(&chunkChildrenBytes, 4, 1, file);
 
         if (strncmp(chunkID, "SIZE", 4) == 0) {
-            fread(&chunk.sizeX, 4, 1, file);
-            fread(&chunk.sizeY, 4, 1, file);
-            fread(&chunk.sizeZ, 4, 1, file);
-            // chunk.sizeX += 2;
-            // chunk.sizeY += 2;
-            // chunk.sizeZ += 2;
-
-            chunk.voxels = std::vector<Voxel>(chunk.sizeX * chunk.sizeY * chunk.sizeZ);
-            numVoxels = chunk.sizeX * chunk.sizeY * chunk.sizeZ;
+            printf("SIZE\n");
+            fread(&sizeX, 4, 1, file);
+            fread(&sizeY, 4, 1, file);
+            fread(&sizeZ, 4, 1, file);
+            tmp = std::vector<Voxel>(sizeX * sizeY * sizeZ);
+            numVoxels = sizeX * sizeY * sizeZ;
             for (int i = 0; i < numVoxels; i++) {
-                chunk.voxels[i].r = 0;
-                chunk.voxels[i].g = 0;
-                chunk.voxels[i].b = 0;
-                chunk.voxels[i].w = 0;
+                tmp[i].r = 0;
+                tmp[i].g = 0;
+                tmp[i].b = 0;
+                tmp[i].w = 0;
             }
+            chunk.sizeX += sizeX;
+            chunk.sizeY += sizeY;
+            chunk.sizeZ += sizeZ;
         } else if (strncmp(chunkID, "XYZI", 4) == 0) {
+            printf("XYZI\n");
             int numVoxels;
             fread(&numVoxels, 4, 1, file);
             for (int i = 0; i < numVoxels; i++) {
@@ -474,11 +483,16 @@ Chunk VoxelRenderer::loadVox(const char *path)
                 fread(&y, 1, 1, file);
                 fread(&z, 1, 1, file);
                 fread(&colorIndex, 1, 1, file);
-                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].r = palette[colorIndex].r;
-                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].g = palette[colorIndex].g;
-                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].b = palette[colorIndex].b;
-                chunk.voxels[(x + 0) + ((z + 0) * chunk.sizeX) + ((y + 0) * chunk.sizeX * chunk.sizeY)].w = palette[colorIndex].w;
+                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].r = palette[colorIndex].r;
+                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].g = palette[colorIndex].g;
+                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].b = palette[colorIndex].b;
+                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].w = palette[colorIndex].w;
             }
+            for (int i = 0; i < tmp.size(); i++) {
+                chunk.voxels.push_back(tmp[i]);
+            }
+            tmp.clear();
+
         } else {
             fseek(file, chunkContentBytes + chunkChildrenBytes, SEEK_CUR);
         }
