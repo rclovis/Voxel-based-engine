@@ -1,23 +1,73 @@
-#version 330 core
+#version 430 core
 
 in vec3 cameraPosition;
 in mat4 cameraDirection;
 in mat4 sunTransformaton;
+in vec3 sizeTexutre;
 
 out vec4 fragColor;
 
 uniform sampler3D voxelTexture;
 uniform sampler3D shaderTexture;
+uniform isampler3D sdfTexture;
 
-const int GRID_SIZE = 100;
-const float VOXEL_SIZE = 5;
+const float VOXEL_SIZE = 10;
 const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
+vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps)
+{
+    ivec3 mapPos = ivec3(rayPos);
+    vec3 deltaDist = abs(vec3(1.0) / rayDir);
+    ivec3 rayStep = ivec3(sign(rayDir));
+    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+    int multiplicator = 1;
+
+    while (steps > 0) {
+        if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
+            mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
+            mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
+            ivec4 sdf = texelFetch(sdfTexture, mapPos, 0);
+            if (sdf.r == 0) {
+                vec4 val = texelFetch(voxelTexture, mapPos, 0);
+                if (val.w != opacity) {
+                    return vec4(val.rgb * texelFetch(shaderTexture, mapPos, 0).r, 1);
+                }
+                multiplicator = 1;
+            } else {
+                multiplicator = sdf.r;
+            }
+        }
+        steps -= multiplicator;
+        int u = 0;
+        while (u < multiplicator) {
+            if (sideDist.x < sideDist.y) {
+                if (sideDist.x < sideDist.z) {
+                    sideDist.x += deltaDist.x;
+                    mapPos.x += rayStep.x;
+                } else {
+                    sideDist.z += deltaDist.z;
+                    mapPos.z += rayStep.z ;
+                }
+            } else {
+                if (sideDist.y < sideDist.z) {
+                    sideDist.y += deltaDist.y;
+                    mapPos.y += rayStep.y ;
+                } else {
+                    sideDist.z += deltaDist.z;
+                    mapPos.z += rayStep.z ;
+                }
+            }
+            u++;
+        }
+    }
+    return vec4(0, 0, 0, 0);
+}
+
 bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float cubeSize) {
     float tmin = 0;
-    float tmax = 2139095039;
+    float tmax = MAX_RAY_STEPS * VOXEL_SIZE;
     vec3 normal = vec3(0, 0, 0);
 
     for (int i = 0; i < 3; i++) {
@@ -28,21 +78,17 @@ bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float c
         } else {
             float t1 = (cubePos[i] - rayOrigin[i]) / rayDir[i];
             float t2 = (cubePos[i] + cubeSize - rayOrigin[i]) / rayDir[i];
-
             if (t1 > t2) {
                 float temp = t1;
                 t1 = t2;
                 t2 = temp;
             }
-
             if (t1 > tmin) {
                 tmin = t1;
             }
-
             if (t2 < tmax) {
                 tmax = t2;
             }
-
             if (tmin > tmax) {
                 return false;
             }
@@ -51,60 +97,95 @@ bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float c
     return true;
 }
 
-vec4 raycast(vec3 rayPos, vec3 rayDir)
+vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
 {
-    vec3 test = rayPos;
-    rayPos = rayPos / VOXEL_SIZE + 0.5;
-    ivec3 mapPos = ivec3(floor(rayPos + 0.));
-    vec3 deltaDist = abs(vec3(length(rayDir)) / rayDir);
-    ivec3 rayStep = ivec3(sign(rayDir));
-    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
     vec4 finalColor = vec4(0, 0, 0, 0);
-    float light = 1;
-    float face = 1;
-    ivec3 mask = ivec3(0, 0, 0);
+    vec4 val = texelFetch(voxelTexture, mapPos, 0);
+    if (val.w != 1) {
+        vec3 dir = normalize(vec3(mapPos) - rayPos);
+        vec3 pos = mapPos;
 
-    for (int i = 0; i < MAX_RAY_STEPS; i++) {
-        if (mapPos.x >= 0 && mapPos.x <= (GRID_SIZE) &&
-            mapPos.y >= 0 && mapPos.y <= (GRID_SIZE) &&
-            mapPos.z >= 0 && mapPos.z <= (GRID_SIZE)) {
-            vec4 val = texture(voxelTexture, (vec3(mapPos) + 0.5) / float(GRID_SIZE));
-            if (val.w != 0) {
-                finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w );
-                if (finalColor.w == 1) {
-                    // light = raycastLignt((mapPos), sunPosition);
-                    light = texture(shaderTexture, (vec3(mapPos) + 0.5) / float(GRID_SIZE)).r;
-                    face = (((dot(sunPosition, vec3(mask.xyz)) + 1) * 1.1 / 2));
-                    return vec4(finalColor.rgb * light * face, 1);
-                }
-            }
-        }
-        if (sideDist.x < sideDist.y) {
-            if (sideDist.x < sideDist.z) {
-                sideDist.x += deltaDist.x;
-                mapPos.x += rayStep.x;
-                mask = ivec3((rayDir.x < 0) ? 1 : -1, 0, 0);
-            } else {
-                sideDist.z += deltaDist.z;
-                mapPos.z += rayStep.z;
-                mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
-            }
+        // vec3 dir = rayDir;
+        // vec3 pos = mapPos;
+        vec4 reflection = raycastReflect(pos, reflect(dir, ivec3(mask)), val.w, steps) * (val.w);
+
+        vec4 transparency = raycastReflect(pos, dir, val.w, steps) * (1-val.w);
+
+        finalColor = vec4(reflection.xyz * val.w + transparency.xyz * (1 - val.w), 1);
+
+        // finalColor = vec4(mix(transparency.xyz, val.xyz, val.w), 1);
+        if (val.w > 0.5) {
+            finalColor = vec4(mix(finalColor.xyz, val.xyz, (1 - val.w)), 1);
+            return vec4(finalColor.rgb, (reflection.w == 0) ? (1-val.w) : 1);
         } else {
-            if (sideDist.y < sideDist.z) {
-                sideDist.y += deltaDist.y;
-                mapPos.y += rayStep.y;
-                mask = ivec3(0,(rayDir.y < 0) ? 1 : -1, 0);
-            } else {
-                sideDist.z += deltaDist.z;
-                mapPos.z += rayStep.z;
-                mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
-            }
+            finalColor = vec4(mix(finalColor.xyz, val.xyz, val.w), 1);
+            return vec4(finalColor.rgb, (transparency.w == 0) ? (val.w) : 1);
         }
     }
-    return vec4(finalColor.rgb * face * light, finalColor.w);
+    finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w);
+    float light = texelFetch(shaderTexture, mapPos, 0).r;
+    float face = (((dot(sunPosition, vec3(mask)) + 1) * 1.0 / 2));
+    return vec4(finalColor.rgb * light * face, 1);
 }
 
 
+vec4 raycast(vec3 rayPos, vec3 rayDir)
+{
+    rayPos = rayPos / VOXEL_SIZE;
+    ivec3 mapPos = ivec3(rayPos);
+    vec3 deltaDist = abs(vec3(1.0) / rayDir);
+    ivec3 rayStep = ivec3(sign(rayDir));
+    vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+    ivec3 mask = ivec3(0, 0, 0);
+
+    int multiplicator = 1;
+
+    int steps = MAX_RAY_STEPS;
+
+    while (steps > 0) {
+        if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
+            mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
+            mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
+            ivec4 sdf = texelFetch(sdfTexture, mapPos, 0);
+            if (sdf.r == 0) {
+                return computeColor (mapPos, rayPos, mask, steps);
+            } else {
+                multiplicator = sdf.r;
+                // if (multiplicator != 1) {
+                //     mapPos = ivec3(rayPos + (rayDir * (length(vec3(mapPos) - rayPos) + (multiplicator - 1))));
+                //     sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
+                // }
+            }
+        }
+        steps -= multiplicator;
+        int u = 0;
+        while (u < multiplicator) {
+            if (sideDist.x < sideDist.y) {
+                if (sideDist.x < sideDist.z) {
+                    sideDist.x += deltaDist.x;
+                    mapPos.x += rayStep.x;
+                    mask = ivec3((rayDir.x < 0) ? 1 : -1, 0, 0);
+                } else {
+                    sideDist.z += deltaDist.z;
+                    mapPos.z += rayStep.z;
+                    mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
+                }
+            } else {
+                if (sideDist.y < sideDist.z) {
+                    sideDist.y += deltaDist.y;
+                    mapPos.y += rayStep.y;
+                    mask = ivec3(0,(rayDir.y < 0) ? 1 : -1, 0);
+                } else {
+                    sideDist.z += deltaDist.z;
+                    mapPos.z += rayStep.z;
+                    mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
+                }
+            }
+            u++;
+        }
+    }
+    return vec4(0, 0, 0, 0);
+}
 
 void main()
 {
@@ -114,8 +195,8 @@ void main()
         vec4(vec4(fragPosition, 0.0, 1.0) * cameraDirection).xyz
         - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz
     );
-    if (rayIsIntersectingTexture(rayDirection, cameraPosition, vec3(0.0, 0.0, 0.0), GRID_SIZE * VOXEL_SIZE) == false) {
-        fragColor = vec4(0, 0, 1, 1);
+    if (rayIsIntersectingTexture(rayDirection, cameraPosition, vec3(0.0, 0.0, 0.0), sizeTexutre.x * VOXEL_SIZE) == false) {
+        fragColor = vec4(0, 0, 0, 0);
     } else {
         fragColor = raycast(cameraPosition, rayDirection);
     }
