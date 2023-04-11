@@ -34,92 +34,53 @@ void VoxelRenderer::init(GLFWwindow* window)
 
     initCamera();
 
-    _vertices = {};
-    _faces = {};
-    _color_buffer = {};
-
-
-    _chunk.sizeX = GRID_SIZE;
-    _chunk.sizeY = GRID_SIZE;
-    _chunk.sizeZ = GRID_SIZE;
-
-    _chunk.voxels = std::vector<Voxel>(GRID_SIZE * GRID_SIZE * GRID_SIZE);
-
-    // for (int x = 0; x < GRID_SIZE; x++) {
-    //     for (int y = 0; y < GRID_SIZE; y++) {
-    //         for (int z = 0; z < GRID_SIZE; z++) {
-    //             _chunk.voxels[(z * GRID_SIZE * GRID_SIZE) + (y * GRID_SIZE) + x] = {
-    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX),
-    //                 // // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
-    //                 // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? static_cast<float>(rand()) / static_cast<float>(RAND_MAX) : 0.0f
-    //                 // // (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) > 0.5) ? 1.0f : 0.0f
-
-    //                 (float) ((float) x / GRID_SIZE),
-    //                 (float) ((float) y / GRID_SIZE),
-    //                 (float) ((float) z / GRID_SIZE),
-    //                 (sqrt(pow(x - GRID_SIZE / 2, 2) + pow(y - GRID_SIZE / 2, 2) + pow(z - GRID_SIZE / 2, 2)) < GRID_SIZE / 2) ? 0.5f : 0.0f
-    //                 // static_cast<float>(rand()) / static_cast<float>(RAND_MAX)
-
-
-    //                 // 1,
-    //                 // 1,
-    //                 // 1,
-    //                 // 1
-
-    //             };
-    //         }
-    //     }
-    // }
-
     _chunk = loadVox("assets/Temple.vox");
     // _chunk = loadVox("assets/untitled.vox");
     // _chunk = loadVox("assets/pieta.vox");
     // _chunk = loadVox("assets/city.vox");
 
-    glGenTextures(1, &_chunk._textureShade);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RED, GL_FLOAT, NULL);
-    glBindImageTexture(0, _chunk._textureShade, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
-    glBindTexture(GL_TEXTURE_3D, 0);
+    // glGenTextures(1, &_chunk._textureShade);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    // glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RED, GL_FLOAT, NULL);
+    // glBindImageTexture(0, _chunk._textureShade, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+    // glBindTexture(GL_TEXTURE_3D, 0);
 
 
-    glGenTextures(1, &_chunk._textureColor);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RGBA, GL_FLOAT, _chunk.voxels.data());
-    glBindImageTexture(1, _chunk._textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
-    glBindTexture(GL_TEXTURE_3D, 0);
+    // glGenTextures(1, &_chunk._textureColor);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    // glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RGBA, GL_FLOAT, _chunk.voxels.data());
+    // glBindImageTexture(1, _chunk._textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+    // glBindTexture(GL_TEXTURE_3D, 0);
 
 
-    std::vector<int> distance(_chunk.sizeX * _chunk.sizeY * _chunk.sizeZ, 5);
+    // std::vector<int> distance(_chunk.sizeX * _chunk.sizeY * _chunk.sizeZ, 5);
 
-    glGenTextures(1, &_chunk._textureDisance);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32I, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RED_INTEGER, GL_INT, distance.data());
-    glBindImageTexture(2, _chunk._textureDisance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
-    glBindTexture(GL_TEXTURE_3D, 0);
+    // glGenTextures(1, &_chunk._textureDisance);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    // glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    // glTexImage3D(GL_TEXTURE_3D, 0, GL_R32I, _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ, 0, GL_RED_INTEGER, GL_INT, distance.data());
+    // glBindImageTexture(2, _chunk._textureDisance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
+    // glBindTexture(GL_TEXTURE_3D, 0);
 
-    updateShadows();
-    updateSdf();
+    // updateShadows();
+    // updateSdf();
 }
 
 void VoxelRenderer::initCamera()
@@ -152,18 +113,18 @@ void VoxelRenderer::draw ()
 {
     glUseProgram(_shaderProgram);
     glBindVertexArray(_VAO);
+    _chunks[0].bindTextures(_shaderProgram);
+    // glUniform1i(glGetUniformLocation(_shaderProgram, "voxelTexture"), 0);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
 
-    glUniform1i(glGetUniformLocation(_shaderProgram, "voxelTexture"), 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
+    // glUniform1i(glGetUniformLocation(_shaderProgram, "shaderTexture"), 1);
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
 
-    glUniform1i(glGetUniformLocation(_shaderProgram, "shaderTexture"), 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
-
-    glUniform1i(glGetUniformLocation(_shaderProgram, "sdfTexture"), 2);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
+    // glUniform1i(glGetUniformLocation(_shaderProgram, "sdfTexture"), 2);
+    // glActiveTexture(GL_TEXTURE2);
+    // glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
 
     // glBindTextureUnit(glGetUniformLocation(_shaderProgram, "voxelTexture"), _chunk._textureShade);
 
@@ -174,7 +135,7 @@ void VoxelRenderer::draw ()
     glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_position"), _camera_position.x, _camera_position.y, _camera_position.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_direction"), _camera_direction.x, _camera_direction.y, _camera_direction.z);
-    glUniform3f(glGetUniformLocation(_shaderProgram, "size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
+    glUniform3f(glGetUniformLocation(_shaderProgram, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -185,74 +146,74 @@ void VoxelRenderer::draw ()
     moveSun();
 }
 
-void VoxelRenderer::updateShadows()
-{
-    glUseProgram(_computeShader);
+// void VoxelRenderer::updateShadows()
+// {
+//     glUseProgram(_computeShader);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "outputTexture"), 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
+//     glUniform1i(glGetUniformLocation(_computeShader, "outputTexture"), 0);
+//     glActiveTexture(GL_TEXTURE0);
+//     glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "inputTexture"), 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
+//     glUniform1i(glGetUniformLocation(_computeShader, "inputTexture"), 1);
+//     glActiveTexture(GL_TEXTURE1);
+//     glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
 
-    glUniformMatrix4fv(glGetUniformLocation(_computeShader, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
-    glUniform3f(glGetUniformLocation(_computeShader, "size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
-    glUniform1i(glGetUniformLocation(_computeShader, "sdf"), 0);
-    glDispatchCompute(_chunk.sizeX , _chunk.sizeY , _chunk.sizeZ);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+//     glUniformMatrix4fv(glGetUniformLocation(_computeShader, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
+//     glUniform3f(glGetUniformLocation(_computeShader, "size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
+//     glUniform1i(glGetUniformLocation(_computeShader, "sdf"), 0);
+//     glDispatchCompute(_chunk.sizeX , _chunk.sizeY , _chunk.sizeZ);
+//     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "outputTexture"), 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
-    std::vector<float> textureData = std::vector<float>(_chunk.sizeX * _chunk.sizeY * _chunk.sizeZ);
-    glGetTexImage(GL_TEXTURE_3D, 0, GL_RED, GL_FLOAT, textureData.data());
+//     glUniform1i(glGetUniformLocation(_computeShader, "outputTexture"), 0);
+//     glActiveTexture(GL_TEXTURE0);
+//     glBindTexture(GL_TEXTURE_3D, _chunk._textureShade);
+//     std::vector<float> textureData = std::vector<float>(_chunk.sizeX * _chunk.sizeY * _chunk.sizeZ);
+//     glGetTexImage(GL_TEXTURE_3D, 0, GL_RED, GL_FLOAT, textureData.data());
 
-    // for (auto i : textureData) {
-    //     std::cout << i << std::endl;
-    // }
-}
+//     // for (auto i : textureData) {
+//     //     std::cout << i << std::endl;
+//     // }
+// }
 
-void VoxelRenderer::updateSdf()
-{
-    glUseProgram(_computeShader);
+// void VoxelRenderer::updateSdf()
+// {
+//     glUseProgram(_computeShader);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "inputTexture"), 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
+//     glUniform1i(glGetUniformLocation(_computeShader, "inputTexture"), 1);
+//     glActiveTexture(GL_TEXTURE1);
+//     glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "sdfTexture"), 2);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
+//     glUniform1i(glGetUniformLocation(_computeShader, "sdfTexture"), 2);
+//     glActiveTexture(GL_TEXTURE2);
+//     glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
 
-    glUniformMatrix4fv(glGetUniformLocation(_computeShader, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
-    glUniform3f(glGetUniformLocation(_computeShader, "size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
-    glUniform1i(glGetUniformLocation(_computeShader, "sdf"), 1);
-    glDispatchCompute(_chunk.sizeX  , _chunk.sizeY  , _chunk.sizeZ );
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+//     glUniformMatrix4fv(glGetUniformLocation(_computeShader, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
+//     glUniform3f(glGetUniformLocation(_computeShader, "size"), _chunk.sizeX, _chunk.sizeY, _chunk.sizeZ);
+//     glUniform1i(glGetUniformLocation(_computeShader, "sdf"), 1);
+//     glDispatchCompute(_chunk.sizeX  , _chunk.sizeY  , _chunk.sizeZ );
+//     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    glUniform1i(glGetUniformLocation(_computeShader, "sdfTexture"), 2);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
-    std::vector<int> textureData2 = std::vector<int>(_chunk.sizeX * _chunk.sizeY * _chunk.sizeZ);
-    glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_INT, textureData2.data());
+//     glUniform1i(glGetUniformLocation(_computeShader, "sdfTexture"), 2);
+//     glActiveTexture(GL_TEXTURE2);
+//     glBindTexture(GL_TEXTURE_3D, _chunk._textureDisance);
+//     std::vector<int> textureData2 = std::vector<int>(_chunk.sizeX * _chunk.sizeY * _chunk.sizeZ);
+//     glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_INT, textureData2.data());
 
-    // for (int z = 0;z < _chunk.sizeZ;z++) {
-    //     for (int y = 0;y < _chunk.sizeY;y++) {
-    //         for (int x = 0;x < _chunk.sizeX;x++) {
-    //             printf("%d", textureData2[z * _chunk.sizeY * _chunk.sizeX + y * _chunk.sizeX + x]);
-    //             if (textureData2[z * _chunk.sizeY * _chunk.sizeX + y * _chunk.sizeX + x] < 10)
-    //                 printf("  ");
-    //             else
-    //                 printf(" ");
-    //         }
-    //         printf("\n");
-    //     }
-    //         printf("\n\n");
-    // }
+//     // for (int z = 0;z < _chunk.sizeZ;z++) {
+//     //     for (int y = 0;y < _chunk.sizeY;y++) {
+//     //         for (int x = 0;x < _chunk.sizeX;x++) {
+//     //             printf("%d", textureData2[z * _chunk.sizeY * _chunk.sizeX + y * _chunk.sizeX + x]);
+//     //             if (textureData2[z * _chunk.sizeY * _chunk.sizeX + y * _chunk.sizeX + x] < 10)
+//     //                 printf("  ");
+//     //             else
+//     //                 printf(" ");
+//     //         }
+//     //         printf("\n");
+//     //     }
+//     //         printf("\n\n");
+//     // }
 
-}
+// }
 
 
 
@@ -260,20 +221,19 @@ void VoxelRenderer::moveSun ()
 {
     if (glfwGetKey(_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        updateShadows();
-
+        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        updateShadows();
+        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_UP) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        updateShadows();
+        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        updateShadows();
+        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
     }
 }
 
@@ -337,7 +297,7 @@ void VoxelRenderer::updateCamera ()
     _proj = _projection * _view * Model;
 }
 
-Chunk VoxelRenderer::loadVox(const char *path)
+std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
 {
     //load a .vox file
     FILE *file = fopen(path, "rb");
@@ -441,10 +401,8 @@ Chunk VoxelRenderer::loadVox(const char *path)
     }
     fseek(file, pos, SEEK_SET);
 
-    std::vector<Voxel> tmp;
-    chunk.sizeX = 0;
-    chunk.sizeY = 0;
-    chunk.sizeZ = 0;
+    Chunk* chunk;
+    std::vector<Chunk*> chunks;
 
     int sizeX, sizeY, sizeZ;
     int testxg = 0;
@@ -462,7 +420,7 @@ Chunk VoxelRenderer::loadVox(const char *path)
             fread(&sizeX, 4, 1, file);
             fread(&sizeY, 4, 1, file);
             fread(&sizeZ, 4, 1, file);
-            tmp = std::vector<Voxel>(sizeX * sizeY * sizeZ);
+            tmp->loadData = std::vector<Voxel>(sizeX * sizeY * sizeZ);
             numVoxels = sizeX * sizeY * sizeZ;
             for (int i = 0; i < numVoxels; i++) {
                 tmp[i].r = 0;
@@ -470,9 +428,6 @@ Chunk VoxelRenderer::loadVox(const char *path)
                 tmp[i].b = 0;
                 tmp[i].w = 0;
             }
-            chunk.sizeX += sizeX;
-            chunk.sizeY += sizeY;
-            chunk.sizeZ += sizeZ;
         } else if (strncmp(chunkID, "XYZI", 4) == 0) {
             printf("XYZI\n");
             int numVoxels;

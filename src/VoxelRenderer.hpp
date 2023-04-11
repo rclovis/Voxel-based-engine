@@ -9,27 +9,28 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <logger.hpp>
 #include <unordered_map>
+#include "Chunk.hpp"
 
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadComputeShader (const char * computePath);
 
-struct Voxel {
-  float r;
-  float g;
-  float b;
-  float w;
-};
+// struct Voxel {
+//   float r;
+//   float g;
+//   float b;
+//   float w;
+// };
 
-struct Chunk {
-  std::vector<Voxel> voxels;
-  GLuint _textureColor;
-  GLuint _textureShade;
-  GLuint _textureDisance;
-  int sizeX;
-  int sizeY;
-  int sizeZ;
-};
+// struct Chunk {
+//   std::vector<Voxel> voxels;
+//   GLuint _textureColor;
+//   GLuint _textureShade;
+//   GLuint _textureDisance;
+//   int sizeX;
+//   int sizeY;
+//   int sizeZ;
+// };
 
 class VoxelRenderer
 {
@@ -41,21 +42,17 @@ class VoxelRenderer
         void updateCamera();
         void draw();
         void moveSun();
-        void updateShadows();
-        void updateSdf();
-        Chunk loadVox(const char *path);
+        std::vector<Chunk*> loadVox(const char *path);
 
     protected:
         std::map<char, std::vector<std::string>> _assets;
         std::vector<std::string> _map;
 
     private:
-
         GLFWwindow* _window;
         GLuint _VAO;
         GLuint _shaderProgram;
         GLuint _computeShader;
-
 
         glm::mat4 _proj;
         glm::mat4 _view;
@@ -70,12 +67,7 @@ class VoxelRenderer
 
         glm::vec3 _rayOrigin;
 
-        std::vector<GLfloat> _vertices;
-        std::vector<unsigned int> _faces;
-        std::vector<GLfloat> _color_buffer;
-        std::vector<GLfloat> _normal;
-
-        Chunk _chunk;
+        std::vector<Chunk*> _chunks;
 
         double _last_x;
         double _last_y;
