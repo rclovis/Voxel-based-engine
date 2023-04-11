@@ -11,8 +11,8 @@ uniform sampler3D voxelTexture;
 uniform sampler3D shaderTexture;
 uniform isampler3D sdfTexture;
 
-const float VOXEL_SIZE = 50;
-const int MAX_RAY_STEPS = 100;
+const float VOXEL_SIZE = 10;
+const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
@@ -98,7 +98,7 @@ bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float c
     return true;
 }
 
-vec4 computeColor (ivec3 mapPos, vec3 rayPos, bvec3 mask)
+vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, vec3 rayDir)
 {
     vec4 finalColor = vec4(0, 0, 0, 0);
     vec4 val = texelFetch(voxelTexture, mapPos, 0);
@@ -125,7 +125,7 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, bvec3 mask)
     }
     finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w);
     float light = texelFetch(shaderTexture, mapPos, 0).r;
-    float face = (((dot(sunPosition, vec3(mask.xyz)) + 1) * 1.1 / 2));
+    float face = (((dot(sunPosition, vec3(mask)) + 1) * 1.0 / 2));
     return vec4(finalColor.rgb * light * face, 1);
 }
 
@@ -137,7 +137,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
     vec3 deltaDist = abs(vec3(1.0) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
     vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
-    bvec3 mask = bvec3(0, 0, 0);
+    ivec3 mask = ivec3(0, 0, 0);
 
     int multiplicator = 1;
 
@@ -149,7 +149,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
             mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
             ivec4 sdf = texelFetch(sdfTexture, mapPos, 0);
             if (sdf.r == 0) {
-                return computeColor (mapPos, rayPos, mask);
+                return computeColor (mapPos, rayPos, mask, rayDir);
             } else {
                 multiplicator = sdf.r;
             }
@@ -159,23 +159,23 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
         while (u < multiplicator) {
             if (sideDist.x < sideDist.y) {
                 if (sideDist.x < sideDist.z) {
-                    sideDist.x += deltaDist.x;
-                    mapPos.x += rayStep.x;
-                    mask = bvec3((rayDir.x < 0) ? 1 : -1, 0, 0);
+                    sideDist.x += deltaDist.x; //* multiplicator;
+                    mapPos.x += rayStep.x; //* multiplicator;
+                    mask = ivec3((rayDir.x < 0) ? 1 : -1, 0, 0);
                 } else {
-                    sideDist.z += deltaDist.z;
-                    mapPos.z += rayStep.z ;
-                    mask = bvec3(0, 0, (rayDir.z < 0) ? 1 : -1);
+                    sideDist.z += deltaDist.z; //* multiplicator;
+                    mapPos.z += rayStep.z; //* multiplicator;
+                    mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
                 }
             } else {
                 if (sideDist.y < sideDist.z) {
-                    sideDist.y += deltaDist.y;
-                    mapPos.y += rayStep.y ;
-                    mask = bvec3(0,(rayDir.y < 0) ? 1 : -1, 0);
+                    sideDist.y += deltaDist.y; //* multiplicator;
+                    mapPos.y += rayStep.y; //* multiplicator;
+                    mask = ivec3(0,(rayDir.y < 0) ? 1 : -1, 0);
                 } else {
-                    sideDist.z += deltaDist.z;
-                    mapPos.z += rayStep.z ;
-                    mask = bvec3(0, 0, (rayDir.z < 0) ? 1 : -1);
+                    sideDist.z += deltaDist.z; //* multiplicator;
+                    mapPos.z += rayStep.z; //* multiplicator;
+                    mask = ivec3(0, 0, (rayDir.z < 0) ? 1 : -1);
                 }
             }
             u++;
