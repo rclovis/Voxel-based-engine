@@ -16,8 +16,6 @@ const float VOXEL_SIZE = 5;
 const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sun_transformation).xyz;
-// vec3 sunPosition = vec3(0, 0, 1);
-
 
 float raycastLignt(vec3 rayPos, vec3 rayDir)
 {

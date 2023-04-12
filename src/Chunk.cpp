@@ -11,6 +11,9 @@ Chunk::~Chunk()
 
 void Chunk::updateShadows(GLuint computeShader, glm::mat4 sun_tansformation)
 {
+    glBindImageTexture(0, _textureShade, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+    glBindImageTexture(1, _textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(2, _textureDisance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
     glUseProgram(computeShader);
 
     glUniform1i(glGetUniformLocation(computeShader, "outputTexture"), 0);
@@ -40,6 +43,9 @@ void Chunk::updateShadows(GLuint computeShader, glm::mat4 sun_tansformation)
 
 void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
 {
+    glBindImageTexture(0, _textureShade, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+    glBindImageTexture(1, _textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(2, _textureDisance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
     glUseProgram(computeShader);
 
     glUniform1i(glGetUniformLocation(computeShader, "inputTexture"), 1);
@@ -121,6 +127,9 @@ void Chunk::loadData()
 
 void Chunk::bindTextures (GLuint shader)
 {
+    glBindImageTexture(0, _textureShade, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+    glBindImageTexture(1, _textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(2, _textureDisance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
     glUniform1i(glGetUniformLocation(shader, "voxelTexture"), 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, _textureColor);

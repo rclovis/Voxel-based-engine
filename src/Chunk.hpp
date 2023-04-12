@@ -10,7 +10,7 @@
 #include <logger.hpp>
 #include <unordered_map>
 
-#define CHUNK_SIZE 200
+#define CHUNK_SIZE 64
 
 struct Voxel {
   float r;
@@ -37,4 +37,3 @@ class Chunk {
         GLuint _textureShade;
         GLuint _textureDisance;
 };
-
