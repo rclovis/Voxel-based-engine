@@ -15,6 +15,7 @@ const float VOXEL_SIZE = 10;
 const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
+// vec3 sunPosition = vec3(0, 0, 1);
 
 vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps)
 {

@@ -15,22 +15,11 @@
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadComputeShader (const char * computePath);
 
-// struct Voxel {
-//   float r;
-//   float g;
-//   float b;
-//   float w;
-// };
-
-// struct Chunk {
-//   std::vector<Voxel> voxels;
-//   GLuint _textureColor;
-//   GLuint _textureShade;
-//   GLuint _textureDisance;
-//   int sizeX;
-//   int sizeY;
-//   int sizeZ;
-// };
+struct sizeChunk {
+  int x;
+  int y;
+  int z;
+};
 
 class VoxelRenderer
 {
@@ -42,6 +31,7 @@ class VoxelRenderer
         void updateCamera();
         void draw();
         void moveSun();
+        std::vector<Chunk*> voxelDataToChunks (std::vector<Voxel> voxels, int sizeX, int sizeY, int sizeZ);
         std::vector<Chunk*> loadVox(const char *path);
 
     protected:
@@ -60,17 +50,13 @@ class VoxelRenderer
         glm::mat4 _projection;
         glm::mat4 _sun_tansformation;
 
-
         glm::vec3 _camera_position;
         glm::vec3 _camera_direction;
         glm::vec3 _up_vector;
-
-        glm::vec3 _rayOrigin;
 
         std::vector<Chunk*> _chunks;
 
         double _last_x;
         double _last_y;
-
 };
 

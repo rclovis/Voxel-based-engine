@@ -12,11 +12,11 @@ layout (location = 0) uniform mat4 sun_transformation;
 layout (location = 1) uniform vec3 size;
 layout (location = 2) uniform int sdf;
 
-const int GRID_SIZE = 100;
 const float VOXEL_SIZE = 5;
 const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sun_transformation).xyz;
+// vec3 sunPosition = vec3(0, 0, 1);
 
 
 float raycastLignt(vec3 rayPos, vec3 rayDir)
