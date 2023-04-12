@@ -34,10 +34,10 @@ void VoxelRenderer::init(GLFWwindow* window)
 
     initCamera();
 
-    _chunk = loadVox("assets/Temple.vox");
-    // _chunk = loadVox("assets/untitled.vox");
-    // _chunk = loadVox("assets/pieta.vox");
-    // _chunk = loadVox("assets/city.vox");
+    // _chunks = loadVox("assets/Temple.vox");
+    _chunks = loadVox("assets/untitled.vox");
+    // _chunks = loadVox("assets/pieta.vox");
+    // _chunks = loadVox("assets/city.vox");
 
     // glGenTextures(1, &_chunk._textureShade);
     // glActiveTexture(GL_TEXTURE0);
@@ -113,7 +113,7 @@ void VoxelRenderer::draw ()
 {
     glUseProgram(_shaderProgram);
     glBindVertexArray(_VAO);
-    _chunks[0].bindTextures(_shaderProgram);
+    _chunks[0]->bindTextures(_shaderProgram);
     // glUniform1i(glGetUniformLocation(_shaderProgram, "voxelTexture"), 0);
     // glActiveTexture(GL_TEXTURE0);
     // glBindTexture(GL_TEXTURE_3D, _chunk._textureColor);
@@ -221,19 +221,19 @@ void VoxelRenderer::moveSun ()
 {
     if (glfwGetKey(_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
+        _chunks[0]->updateShadows(_computeShader, _sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
+        _chunks[0]->updateShadows(_computeShader, _sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_UP) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
+        _chunks[0]->updateShadows(_computeShader, _sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        _chunks[0].updateShadows(_computeShader, _sun_tansformation);
+        _chunks[0]->updateShadows(_computeShader, _sun_tansformation);
     }
 }
 
@@ -308,6 +308,7 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
     //read the header
     char header[4];
     fread(header, 4, 1, file);
+    int number_of_chunks = 0;
     if (strncmp(header, "VOX ", 4) != 0) {
         printf("Error: File %s is not a valid .vox file\n", path);
     }
@@ -322,10 +323,10 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
     // read the main chunk
     char chunkID[4];
     int chunkContentBytes;
-    int chunkChildrenBytes;
+    int total;
     fread(chunkID, 4, 1, file);
     fread(&chunkContentBytes, 4, 1, file);
-    fread(&chunkChildrenBytes, 4, 1, file);
+    fread(&total, 4, 1, file);
 
     if (strncmp(chunkID, "MAIN", 4) != 0) {
         printf("Error: File %s is not a valid .vox file\n", path);
@@ -338,13 +339,14 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
 
     //get current position in file
     long pos = ftell(file);
-    for (int i = 0; i < chunkChildrenBytes; i++) {
+    for (int i = 0; i < total;) {
         char chunkID[4];
         int chunkContentBytes;
         int chunkChildrenBytes;
         fread(chunkID, 4, 1, file);
         fread(&chunkContentBytes, 4, 1, file);
         fread(&chunkChildrenBytes, 4, 1, file);
+        i += chunkContentBytes;
         if (strncmp(chunkID, "RGBA", 4) == 0) {
             //read the palette
             for (int i = 0; i < chunkContentBytes / 4; i += 1) {
@@ -401,57 +403,72 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
     }
     fseek(file, pos, SEEK_SET);
 
-    Chunk* chunk;
+    // Chunk* chunk;
     std::vector<Chunk*> chunks;
 
     int sizeX, sizeY, sizeZ;
-    int testxg = 0;
 
-    for (int i = 0; i < chunkChildrenBytes; i++) {
+    for (int i = 0; i < total;) {
         char chunkID[4];
         int chunkContentBytes;
         int chunkChildrenBytes;
         fread(chunkID, 4, 1, file);
         fread(&chunkContentBytes, 4, 1, file);
         fread(&chunkChildrenBytes, 4, 1, file);
+        i += chunkContentBytes;
+
 
         if (strncmp(chunkID, "SIZE", 4) == 0) {
-            printf("SIZE\n");
+            // printf("SIZE\n");
             fread(&sizeX, 4, 1, file);
             fread(&sizeY, 4, 1, file);
             fread(&sizeZ, 4, 1, file);
-            tmp->loadData = std::vector<Voxel>(sizeX * sizeY * sizeZ);
-            numVoxels = sizeX * sizeY * sizeZ;
-            for (int i = 0; i < numVoxels; i++) {
-                tmp[i].r = 0;
-                tmp[i].g = 0;
-                tmp[i].b = 0;
-                tmp[i].w = 0;
-            }
+            printf("Size X: %d\n", sizeX);  
+            printf("Size Y: %d\n", sizeY);
+            printf("Size Z: %d\n", sizeZ);
+            // tmp->loadData = std::vector<Voxel>(sizeX * sizeY * sizeZ);
+            // numVoxels = sizeX * sizeY * sizeZ;
+            // for (int j = 0; j < numVoxels; j++) {
+            //     tmp[j].r = 0;
+            //     tmp[j].g = 0;
+            //     tmp[j].b = 0;
+            //     tmp[j].w = 0;
+            // }
         } else if (strncmp(chunkID, "XYZI", 4) == 0) {
-            printf("XYZI\n");
+            // printf("XYZI\n");
             int numVoxels;
             fread(&numVoxels, 4, 1, file);
-            for (int i = 0; i < numVoxels; i++) {
+            for (int j = 0; j < numVoxels; j++) {
                 unsigned char x, y, z, colorIndex;
                 fread(&x, 1, 1, file);
                 fread(&y, 1, 1, file);
                 fread(&z, 1, 1, file);
                 fread(&colorIndex, 1, 1, file);
-                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].r = palette[colorIndex].r;
-                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].g = palette[colorIndex].g;
-                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].b = palette[colorIndex].b;
-                tmp[x + (z * sizeX) + (y * sizeX * sizeY)].w = palette[colorIndex].w;
+                // tmp[x + (z * sizeX) + (y * sizeX * sizeY)].r = palette[colorIndex].r;
+                // tmp[x + (z * sizeX) + (y * sizeX * sizeY)].g = palette[colorIndex].g;
+                // tmp[x + (z * sizeX) + (y * sizeX * sizeY)].b = palette[colorIndex].b;
+                // tmp[x + (z * sizeX) + (y * sizeX * sizeY)].w = palette[colorIndex].w;
             }
-            for (int i = 0; i < tmp.size(); i++) {
-                chunk.voxels.push_back(tmp[i]);
+            // for (int i = 0; i < tmp.size(); i++) {
+            //     chunk.voxels.push_back(tmp[i]);
+            // }
+            // tmp.clear();
+        } else if (strncmp(chunkID, "nTRN", 4) == 0) {
+            fseek(file, 4 * 7, SEEK_CUR);
+            int j = 0;
+            while (j < chunkContentBytes - 4 * 7) {
+                int size = 0;
+                fread(&size, 4, 1, file);
+                char *str = new char[size + 1];
+                memset(str, 0, size + 1);
+                fread(str, size, 1, file);
+                printf("%s\n", str);
+                j += size + 4;
             }
-            tmp.clear();
-
         } else {
             fseek(file, chunkContentBytes + chunkChildrenBytes, SEEK_CUR);
         }
     }
 
-    return chunk;
+    return std::vector<Chunk*>();
 }
