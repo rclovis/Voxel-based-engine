@@ -118,10 +118,13 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
         }
     }
     finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w);
+    float shadow = 1;
     float light = (texelFetch(voxelTexture, mapPos, 0).b) / 255.0;
-
-    float face = (((dot(sunPosition, vec3(mask)) + 1) * 1.0 / 2));
-    return vec4(finalColor.rgb * light * face, 1);
+    float diffuse = max(0, dot(sunPosition, vec3(mask))) * 1.2;
+    shadow = diffuse * light;
+    if (shadow < 0.1)
+        shadow = 0.1;
+    return vec4(finalColor.rgb * shadow, 1);
 }
 
 vec4 raycast(vec3 rayPos, vec3 rayDir)
@@ -179,7 +182,6 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
 void main()
 {
     vec2 fragPosition = gl_FragCoord.xy;
-
     vec3 rayDirection = normalize(
         vec4(vec4(fragPosition, 0.0, 1.0) * cameraDirection).xyz
         - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz

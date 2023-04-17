@@ -34,8 +34,8 @@ void VoxelRenderer::init(GLFWwindow* window)
     initCamera();
 
     // _chunks = loadVox("assets/torus.vox");
-    // _chunks = loadVox("assets/Temple.vox");
-    _chunks = loadVox("assets/untitled.vox");
+    _chunks = loadVox("assets/Temple.vox");
+    // _chunks = loadVox("assets/untitled.vox");
     // _chunks[0]->printChunk();
     // _chunks = loadVox("assets/pieta.vox");
     // _chunks = loadVox("assets/city.vox");
@@ -179,8 +179,8 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
                     unsigned char r = 0, g = 0, b = 100, a = 100;
                     color = (a << 24) | (b << 16) | (g << 8) | r;
                 }
-                if (color == 0xFF00FFFF) {
-                    unsigned char r = 0, g = 0, b = 0, a = 255;
+                if (color == 0xFFFF00FF) {
+                    unsigned char r = 0, g = 0, b = 0, a = 250;
                     color = (a << 24) | (b << 16) | (g << 8) | r;
                 }
 
