@@ -35,9 +35,10 @@ void VoxelRenderer::init(GLFWwindow* window)
 
     // _chunks = loadVox("assets/torus.vox");
     // _chunks = loadVox("assets/Temple.vox");
-    // _chunks = loadVox("assets/untitled.vox");
+    _chunks = loadVox("assets/untitled.vox");
+    // _chunks[0]->printChunk();
     // _chunks = loadVox("assets/pieta.vox");
-    _chunks = loadVox("assets/city.vox");
+    // _chunks = loadVox("assets/city.vox");
 }
 
 void VoxelRenderer::initCamera()
@@ -60,6 +61,8 @@ void VoxelRenderer::draw ()
     glUniform3f(glGetUniformLocation(_shaderProgram, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    _chunks[0]->unbindTextures();
 
     glfwGetCursorPos(_window, &_last_x, &_last_y);
     glfwPollEvents();
@@ -156,8 +159,7 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
     int totalSize;
     fread(&totalSize, 4, 1, file);
 
-    std::vector<Voxel> palette;
-    palette.push_back({0, 0, 0, 0});
+    std::vector<unsigned int> palette;
 
     long pos = ftell(file);
 
@@ -170,34 +172,30 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
         i += chunkContentBytes;
         if (strncmp(chunkID, "RGBA", 4) == 0) {
             for (int i = 0; i < chunkContentBytes / 4; i += 1) {
-                unsigned char r, g, b, a;
-                fread(&r, 1, 1, file);
-                fread(&g, 1, 1, file);
-                fread(&b, 1, 1, file);
-                fread(&a, 1, 1, file);
+                unsigned int color;
+                fread(&color, 4, 1, file);
 
-                if (r == 255 && g == 255 && b == 255 && a == 255) {
-                    a = 100;
-                    r = 0;
-                    g = 0;
-                    b = 100;
+                if (color == 0xFFFFFFFF) {
+                    unsigned char r = 0, g = 0, b = 100, a = 100;
+                    color = (a << 24) | (b << 16) | (g << 8) | r;
+                }
+                if (color == 0xFF00FFFF) {
+                    unsigned char r = 0, g = 0, b = 0, a = 255;
+                    color = (a << 24) | (b << 16) | (g << 8) | r;
                 }
 
-                if (r == 255 && g == 0 && b == 255 && a == 255) {
-                    a = 250;
-                    r = 0;
-                    g = 0;
-                    b = 0;
-                }
-
-                palette.push_back({r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f});
+                if (palette.size() == 255)
+                    palette.insert(palette.begin(), color);
+                else
+                    palette.push_back(color);
             }
             break;
         } else {
             fseek(file, chunkContentBytes, SEEK_CUR);
         }
     }
-    if (palette.size() != 257) {
+    if (palette.size() != 256) {
+        std::cout << "Use default palette" << std::endl;
         unsigned int colors[256] = {
             0x00000000, 0xffffffff, 0xffccffff, 0xff99ffff, 0xff66ffff, 0xff33ffff, 0xff00ffff, 0xffffccff, 0xffccccff, 0xff99ccff, 0xff66ccff, 0xff33ccff, 0xff00ccff, 0xffff99ff, 0xffcc99ff, 0xff9999ff,
             0xff6699ff, 0xff3399ff, 0xff0099ff, 0xffff66ff, 0xffcc66ff, 0xff9966ff, 0xff6666ff, 0xff3366ff, 0xff0066ff, 0xffff33ff, 0xffcc33ff, 0xff9933ff, 0xff6633ff, 0xff3333ff, 0xff0033ff, 0xffff00ff,
@@ -218,7 +216,7 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
         };
         palette.clear();
         for (int i = 0; i < 256; i++) {
-            palette.push_back({ (uint8_t)(colors[i] >> 24) / 255.0f, (uint8_t)(colors[i] >> 16) /  255.0f, (uint8_t)(colors[i] >> 8) /  255.0f, 1});
+            palette.push_back(colors[i]);
         }
     }
     fseek(file, pos, SEEK_SET);
@@ -241,13 +239,7 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
             fread(&sizeX, 4, 1, file);
             fread(&sizeY, 4, 1, file);
             fread(&sizeZ, 4, 1, file);
-            fullVoxels.push_back(std::vector<Voxel>(sizeX * sizeY * sizeZ));
-            for (int j = 0; j < sizeX * sizeY * sizeZ; j++) {
-                fullVoxels[fullVoxels.size() - 1][j].r = 0;
-                fullVoxels[fullVoxels.size() - 1][j].g = 0;
-                fullVoxels[fullVoxels.size() - 1][j].b = 0;
-                fullVoxels[fullVoxels.size() - 1][j].w = 0;
-            }
+            fullVoxels.push_back(std::vector<Voxel>(sizeX * sizeY * sizeZ, {SDF_LIMIT, 0, 0, 0}));
         } else if (strncmp(chunkID, "XYZI", 4) == 0) {
             int numVoxels;
             fread(&numVoxels, 4, 1, file);
@@ -257,10 +249,8 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
                 fread(&y, 1, 1, file);
                 fread(&z, 1, 1, file);
                 fread(&colorIndex, 1, 1, file);
-                fullVoxels[fullVoxels.size() - 1][x + (y * sizeX) + (z * sizeX * sizeY)].r = palette[colorIndex].r;
-                fullVoxels[fullVoxels.size() - 1][x + (y * sizeX) + (z * sizeX * sizeY)].g = palette[colorIndex].g;
-                fullVoxels[fullVoxels.size() - 1][x + (y * sizeX) + (z * sizeX * sizeY)].b = palette[colorIndex].b;
-                fullVoxels[fullVoxels.size() - 1][x + (y * sizeX) + (z * sizeX * sizeY)].w = palette[colorIndex].w;
+
+                fullVoxels[fullVoxels.size() - 1][x + (y * sizeX) + (z * sizeX * sizeY)] = {SDF_LIMIT, colorIndex, 0, 0};
             }
         } else if (strncmp(chunkID, "nTRN", 4) == 0) {
             fseek(file, 4 * 7, SEEK_CUR);
@@ -304,13 +294,7 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
         (transform[i].z > max.z) ? max.z = transform[i].z : 0;
     }
 
-    std::vector<Voxel> voxels = std::vector<Voxel>((max.x + sizeX) * (max.y + sizeY) * (max.z + sizeZ), {0, 0, 0, 0});
-    for (size_t i = 0; i < voxels.size(); i++) {
-        voxels[i].r = 0;
-        voxels[i].g = 0;
-        voxels[i].b = 0;
-        voxels[i].w = 0;
-    }
+    std::vector<Voxel> voxels = std::vector<Voxel>((max.x + sizeX) * (max.y + sizeY) * (max.z + sizeZ), {SDF_LIMIT, 0, 0, 0});
     for (size_t i = 0; i < fullVoxels.size(); i++) {
         for (size_t j = 0; j < fullVoxels[i].size(); j++) {
             int moveX = 0, moveY = 0, moveZ = 0;
@@ -333,10 +317,10 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
     fullVoxels.clear();
     transform.clear();
 
-    return voxelDataToChunks(voxels, max.x + sizeX, max.y + sizeY, max.z + sizeZ);
+    return voxelDataToChunks(voxels, max.x + sizeX, max.y + sizeY, max.z + sizeZ, palette);
 }
 
-std::vector<Chunk*> VoxelRenderer::voxelDataToChunks (std::vector<Voxel> voxels, int sizeX, int sizeY, int sizeZ)
+std::vector<Chunk*> VoxelRenderer::voxelDataToChunks (std::vector<Voxel> voxels, int sizeX, int sizeY, int sizeZ, std::vector<unsigned int> colors)
 {
     std::vector<Chunk*> chunks;
     for (int z = 0;z < sizeZ;z += CHUNK_SIZE) {
@@ -352,16 +336,15 @@ std::vector<Chunk*> VoxelRenderer::voxelDataToChunks (std::vector<Voxel> voxels,
             for (int x = 0;x < sizeX;x++) {
                 Voxel voxel = voxels[x + (y * sizeX) + (z * sizeX * sizeY)];
                 int pos = (x / CHUNK_SIZE) + ((y / CHUNK_SIZE) * (sizeX / CHUNK_SIZE)) + ((z / CHUNK_SIZE) * (sizeX / CHUNK_SIZE) * (sizeY / CHUNK_SIZE));
-                if (voxel.r != 0 || voxel.g != 0 || voxel.b != 0 || voxel.w != 0) {
-                    chunks[pos]->setVoxel(x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE, voxel);
-                }
+                chunks[pos]->setVoxel(x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE, voxel);
             }
         }
     }
     for (auto chunk : chunks) {
+        chunk->setPalette(colors);
         chunk->loadData();
-        chunk->updateShadows(_computeShader, _sun_tansformation);
         chunk->updateSdf(_computeShader, _sun_tansformation);
+        chunk->updateShadows(_computeShader, _sun_tansformation);
     }
     return chunks;
 }
