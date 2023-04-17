@@ -120,10 +120,10 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
     finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w);
     float shadow = 1;
     float light = (texelFetch(voxelTexture, mapPos, 0).b) / 255.0;
-    float diffuse = max(0, dot(sunPosition, vec3(mask))) * 1.2;
-    shadow = diffuse * light;
-    if (shadow < 0.1)
-        shadow = 0.1;
+    float diffuse = max(0, dot(sunPosition, vec3(mask)));
+    shadow =  light;
+    // if (shadow < 0.1)
+    //     shadow = 0.1;
     return vec4(finalColor.rgb * shadow, 1);
 }
 

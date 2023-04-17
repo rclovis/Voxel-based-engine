@@ -43,6 +43,7 @@ class VoxelRenderer
         GLuint _VAO;
         GLuint _shaderProgram;
         GLuint _computeShader;
+        GLuint _computeShaderAverage;
 
         glm::mat4 _proj;
         glm::mat4 _view;

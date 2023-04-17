@@ -9,7 +9,7 @@ Chunk::~Chunk()
 {
 }
 
-void Chunk::updateShadows(GLuint computeShader, glm::mat4 sun_tansformation)
+void Chunk::updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm::mat4 sun_tansformation)
 {
     glUseProgram(computeShader);
     glBindImageTexture(0, _textureInfo, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
@@ -30,6 +30,56 @@ void Chunk::updateShadows(GLuint computeShader, glm::mat4 sun_tansformation)
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
+
+
+
+
+
+
+    glUseProgram(computeShaderAverage);
+    glBindImageTexture(0, _textureInfo, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
+
+    glUniform1i(glGetUniformLocation(computeShaderAverage, "outputTexture"), 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, _textureInfo);
+
+    glUniform1i(glGetUniformLocation(computeShaderAverage, "tmp"), 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, _textureSDF);
+
+    glUniformMatrix4fv(glGetUniformLocation(computeShaderAverage, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
+    glUniform3f(glGetUniformLocation(computeShaderAverage, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform1i(glGetUniformLocation(computeShaderAverage, "stepNo"), 0);
+
+    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    glUniform1i(glGetUniformLocation(computeShaderAverage, "stepNo"), 1);
+
+    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+
+    // glUniform1i(glGetUniformLocation(computeShaderAverage, "outputTexture"), 0);
+    // if (glGetUniformLocation(computeShaderAverage, "outputTexture") == -1) {
+    //     std::cout << "outputTexture not found" << std::endl;
+    // }
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_3D, _textureInfo);
+
+    // glUniform1i(glGetUniformLocation(computeShaderAverage, "tmp"), 1);
+    // if (glGetUniformLocation(computeShaderAverage, "tmp") == -1) {
+    //     std::cout << "tmp not found" << std::endl;
+    // }
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_3D, _textureSDF);
+
+    // glUniformMatrix4fv(glGetUniformLocation(computeShaderAverage, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
+    // glUniform3f(glGetUniformLocation(computeShaderAverage, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    // glUniform1i(glGetUniformLocation(computeShaderAverage, "stepNo"), 1);
+
+    // glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    // glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
@@ -41,9 +91,9 @@ void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, _textureInfo);
 
-    glUniform1i(glGetUniformLocation(computeShader, "sdfTexture"), 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_3D, _textureSDF);
+    // glUniform1i(glGetUniformLocation(computeShader, "sdfTexture"), 1);
+    // glActiveTexture(GL_TEXTURE1);
+    // glBindTexture(GL_TEXTURE_3D, _textureSDF);
 
     glUniformMatrix4fv(glGetUniformLocation(computeShader, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(computeShader, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
@@ -51,6 +101,12 @@ void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
 
     glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, 0);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, 0);
+    glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
 }
 
 void Chunk::loadData()

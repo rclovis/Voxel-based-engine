@@ -32,7 +32,7 @@ class Chunk {
         Chunk();
         ~Chunk();
         void updateSdf(GLuint computeShader, glm::mat4 sun_tansformation);
-        void updateShadows(GLuint computeShader, glm::mat4 sun_tansformation);
+        void updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm::mat4 sun_tansformation);
         void setPalette (std::vector<unsigned int> palette);
         void loadData();
         void unbindTextures();

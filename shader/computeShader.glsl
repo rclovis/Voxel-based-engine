@@ -21,6 +21,32 @@ vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformation).xyz;
 
 uint raycastLignt(vec3 rayPos, vec3 rayDir)
 {
+    if (imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, 1))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, -1))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 1, 0))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, -1, 0))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(1, 0, 0))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(-1, 0, 0))).r == 0) {
+        return 0;
+    }
+    int x = int(rayPos.x) - 1;
+    int y = int(rayPos.y) - 1;
+    int z = int(rayPos.z) - 1;
+    int ok = 0;
+    for (int i = x; i < x + 1 * 2; i++) {
+        for (int j = y; j < y + 1 * 2; j++) {
+            for (int k = z; k < z + 1 * 2; k++) {
+                if (i < size.x && j < size.y && k < size.z && i >= 0 && j >= 0 && k >= 0) {
+                    if (imageLoad(outputTexture, ivec3(i, j, k)).r == 0) {
+                        ok = 1;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if (ok == 0) return 0;
+
     ivec3 mapPos = ivec3(rayPos);
     vec3 deltaDist = abs(vec3(1.0) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
@@ -33,7 +59,7 @@ uint raycastLignt(vec3 rayPos, vec3 rayDir)
         if (mapPos.x >= 0 && mapPos.x < (size.x) &&
             mapPos.y >= 0 && mapPos.y < (size.y) &&
             mapPos.z >= 0 && mapPos.z < (size.z) && mapPos != ivec3(rayPos)) {
-            uvec4 sdf = imageLoad(outputTexture, ivec3(mapPos + vec3(rayDir)));
+            uvec4 sdf = imageLoad(outputTexture, ivec3(mapPos));
             if (sdf.r == 0) {
                 vec4 val = unpackUnorm4x8(data[sdf.g]);
                 opacity *= (1 - (val.w));
@@ -105,24 +131,30 @@ void main()
         }
         imageStore(outputTexture, texel, uvec4(0, data.g, data.b, data.a));
     } else {
-        if (imageLoad(outputTexture, ivec3(texel)).r != 0) {
-            return;
-        } else if (imageLoad(outputTexture, ivec3(texel + ivec3(0, 0, 1))).r == 0 &&
-            imageLoad(outputTexture, ivec3(texel + ivec3(0, 0, -1))).r == 0 &&
-            imageLoad(outputTexture, ivec3(texel + ivec3(0, 1, 0))).r == 0 &&
-            imageLoad(outputTexture, ivec3(texel + ivec3(0, -1, 0))).r == 0 &&
-            imageLoad(outputTexture, ivec3(texel + ivec3(1, 0, 0))).r == 0 &&
-            imageLoad(outputTexture, ivec3(texel + ivec3(-1, 0, 0))).r == 0) {
-            return;
-        }
-        uint shadow = raycastLignt(texel, sunPosition)
-            + raycastLignt(vec3(texel.x, texel.y, texel.z + 1), sunPosition)
-            + raycastLignt(vec3(texel.x, texel.y, texel.z - 1), sunPosition)
-            + raycastLignt(vec3(texel.x, texel.y + 1, texel.z), sunPosition)
-            + raycastLignt(vec3(texel.x, texel.y - 1, texel.z), sunPosition)
-            + raycastLignt(vec3(texel.x + 1, texel.y, texel.z), sunPosition)
-            + raycastLignt(vec3(texel.x - 1, texel.y, texel.z), sunPosition);
-        shadow /= 7;
+        
+        vec3 posVoxel = vec3(texel);
+        uint shadow = raycastLignt(vec3(posVoxel.x, posVoxel.y, posVoxel.z), sunPosition);
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y, posVoxel.z + 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y, posVoxel.z - 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y + 1, posVoxel.z), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y - 1, posVoxel.z), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x + 1, posVoxel.y, posVoxel.z), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x - 1, posVoxel.y, posVoxel.z), sunPosition)
+
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y + 1, posVoxel.z + 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y + 1, posVoxel.z - 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y - 1, posVoxel.z + 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x, posVoxel.y - 1, posVoxel.z - 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x + 1, posVoxel.y, posVoxel.z + 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x + 1, posVoxel.y, posVoxel.z - 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x - 1, posVoxel.y, posVoxel.z + 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x - 1, posVoxel.y, posVoxel.z - 1), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x + 1, posVoxel.y + 1, posVoxel.z), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x + 1, posVoxel.y - 1, posVoxel.z), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x - 1, posVoxel.y + 1, posVoxel.z), sunPosition)
+        //     + raycastLignt(vec3(posVoxel.x - 1, posVoxel.y - 1, posVoxel.z), sunPosition);
+
+        // shadow /= 24;
         imageStore(outputTexture, texel, uvec4(data.r, data.g, shadow, data.a));
     }
 }

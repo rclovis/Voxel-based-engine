@@ -30,6 +30,7 @@ void VoxelRenderer::init(GLFWwindow* window)
 
     _shaderProgram = LoadShaders("shader/vertexShader.glsl", "shader/fragmentShader.glsl");
     _computeShader = LoadComputeShader("shader/computeShader.glsl");
+    _computeShaderAverage = LoadComputeShader("shader/averageShadows.glsl");
 
     initCamera();
 
@@ -75,19 +76,19 @@ void VoxelRenderer::moveSun ()
 {
     if (glfwGetKey(_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _sun_tansformation);
+        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage, _sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _sun_tansformation);
+        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage,_sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_UP) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _sun_tansformation);
+        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage,_sun_tansformation);
     }
     if (glfwGetKey(_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _sun_tansformation);
+        for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage,_sun_tansformation);
     }
     // glm::vec4 sun_pos = glm::vec4(0, 0, 1, 1) * _sun_tansformation;
 }
@@ -344,7 +345,7 @@ std::vector<Chunk*> VoxelRenderer::voxelDataToChunks (std::vector<Voxel> voxels,
         chunk->setPalette(colors);
         chunk->loadData();
         chunk->updateSdf(_computeShader, _sun_tansformation);
-        chunk->updateShadows(_computeShader, _sun_tansformation);
+        chunk->updateShadows(_computeShader, _computeShaderAverage, _sun_tansformation);
     }
     return chunks;
 }
