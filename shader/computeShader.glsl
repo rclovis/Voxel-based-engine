@@ -19,33 +19,45 @@ const int SDF_LIMIT = 7;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformation).xyz;
 
-uint raycastLignt(vec3 rayPos, vec3 rayDir)
+bool shouldBeComputed (vec3 rayPos)
 {
+    if (imageLoad(outputTexture, ivec3(rayPos)).r == 0) return true;
     if (imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, 1))).r == 0 &&
         imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, -1))).r == 0 &&
         imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 1, 0))).r == 0 &&
         imageLoad(outputTexture, ivec3(rayPos + ivec3(0, -1, 0))).r == 0 &&
         imageLoad(outputTexture, ivec3(rayPos + ivec3(1, 0, 0))).r == 0 &&
         imageLoad(outputTexture, ivec3(rayPos + ivec3(-1, 0, 0))).r == 0) {
-        return 0;
+        return false;
     }
-    int x = int(rayPos.x) - 1;
-    int y = int(rayPos.y) - 1;
-    int z = int(rayPos.z) - 1;
-    int ok = 0;
-    for (int i = x; i < x + 1 * 2; i++) {
-        for (int j = y; j < y + 1 * 2; j++) {
-            for (int k = z; k < z + 1 * 2; k++) {
-                if (i < size.x && j < size.y && k < size.z && i >= 0 && j >= 0 && k >= 0) {
-                    if (imageLoad(outputTexture, ivec3(i, j, k)).r == 0) {
-                        ok = 1;
-                        break;
-                    }
-                }
-            }
-        }
+    if (imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, 1))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, -1))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 1, 0))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, -1, 0))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(1, 0, 0))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(-1, 0, 0))).r == 0) {
+        return true;
     }
-    if (ok == 0) return 0;
+    // int x = int(rayPos.x) - 1;
+    // int y = int(rayPos.y) - 1;
+    // int z = int(rayPos.z) - 1;
+    // for (int i = x; i < x + 2; i++) {
+    //     for (int j = y; j < y + 2; j++) {
+    //         for (int k = z; k < z + 2; k++) {
+    //             // if (i < size.x && j < size.y && k < size.z && i >= 0 && j >= 0 && k >= 0) {
+    //                 if (imageLoad(outputTexture, ivec3(i, j, k)).r == 0) {
+    //                     return true;
+    //                 }
+    //             // }
+    //         }
+    //     }
+    // }
+    return false;
+}
+
+uint raycastLignt(vec3 rayPos, vec3 rayDir)
+{
+    if (!shouldBeComputed(rayPos)) return 0;
 
     ivec3 mapPos = ivec3(rayPos);
     vec3 deltaDist = abs(vec3(1.0) / rayDir);

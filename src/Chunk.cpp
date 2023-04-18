@@ -30,6 +30,9 @@ void Chunk::updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_3D, 0);
+    glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
 
 
@@ -38,6 +41,7 @@ void Chunk::updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm
 
     glUseProgram(computeShaderAverage);
     glBindImageTexture(0, _textureInfo, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    glBindImageTexture(1, _textureSDF, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
 
     glUniform1i(glGetUniformLocation(computeShaderAverage, "outputTexture"), 0);
     glActiveTexture(GL_TEXTURE0);
@@ -91,9 +95,9 @@ void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, _textureInfo);
 
-    // glUniform1i(glGetUniformLocation(computeShader, "sdfTexture"), 1);
-    // glActiveTexture(GL_TEXTURE1);
-    // glBindTexture(GL_TEXTURE_3D, _textureSDF);
+    glUniform1i(glGetUniformLocation(computeShader, "sdfTexture"), 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_3D, _textureSDF);
 
     glUniformMatrix4fv(glGetUniformLocation(computeShader, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(computeShader, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
@@ -106,7 +110,8 @@ void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
     glBindTexture(GL_TEXTURE_3D, 0);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_3D, 0);
-    glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
 }
 
 void Chunk::loadData()

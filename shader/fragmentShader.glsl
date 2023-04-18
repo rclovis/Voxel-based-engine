@@ -99,6 +99,15 @@ bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float c
     return true;
 }
 
+vec4 SpecularShading (vec3 reflect_ray, ivec3 texel_pos)
+{
+    float specular = 0;
+    if (texelFetch(voxelTexture, texel_pos, 0).b > 100) {
+        specular = pow(max(0, dot(reflect_ray, normalize(sunPosition))), 32);
+    }
+    return vec4(1, 1, 1, specular);
+}
+
 vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
 {
     vec4 finalColor = vec4(0, 0, 0, 0);
@@ -106,8 +115,10 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
     if (val.w != 1) {
         vec3 dir = normalize(vec3(mapPos) - rayPos);
         vec3 pos = mapPos;
-        vec4 reflection = raycastReflect(pos, reflect(dir, ivec3(mask)), val.w, steps) * (val.w);
         vec4 transparency = raycastReflect(pos, dir, val.w, steps) * (1-val.w);
+        vec4 reflection = raycastReflect(pos, reflect(dir, ivec3(mask)), val.w, steps) * (val.w);
+        vec4 specular = SpecularShading(reflect(dir, ivec3(mask)), mapPos);
+        reflection = vec4(mix(reflection.rgb, specular.rgb, specular.a), reflection.w);
         finalColor = vec4(reflection.xyz * val.w + transparency.xyz * (1 - val.w), 1);
         if (val.w > 0.5) {
             finalColor = vec4(mix(finalColor.xyz, val.xyz, (1 - val.w)), 1);
@@ -119,11 +130,11 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
     }
     finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w);
     float shadow = 1;
-    float light = (texelFetch(voxelTexture, mapPos, 0).b) / 255.0;
-    float diffuse = max(0, dot(sunPosition, vec3(mask)));
-    shadow =  light;
-    // if (shadow < 0.1)
-    //     shadow = 0.1;
+    float light = (texelFetch(voxelTexture, mapPos + mask, 0).b) / 255.0;
+    float diffuse = max(0, dot(sunPosition, vec3(mask))) * 1.1;
+    if (light < 0.15) light = 0.15;
+    if (diffuse < 0.15) diffuse = 0.15;
+    shadow = diffuse * light;
     return vec4(finalColor.rgb * shadow, 1);
 }
 
