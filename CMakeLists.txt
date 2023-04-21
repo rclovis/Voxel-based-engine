@@ -19,6 +19,7 @@ OPENGL_SOURCES
     src/main.cpp
     src/Frame.cpp
     src/TextRenderer.cpp
+    src/Chunk.cpp
 )
 
 set(
