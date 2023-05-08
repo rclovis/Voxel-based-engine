@@ -30,12 +30,6 @@ vec3 test[8] = vec3[](
     vec3(64, 64, 64)
 );
 uvec4 fetchData (ivec3 mapPos) {
-    // return texelFetch(voxelTexture[0], mapPos, 0);
-    // if (mapPos.x >= voxelTexturePosition[0].x && mapPos.x < voxelTexturePosition[0].x + sizeTexutre.x &&
-    //     mapPos.y >= voxelTexturePosition[0].y && mapPos.y < voxelTexturePosition[0].y + sizeTexutre.y &&
-    //     mapPos.z >= voxelTexturePosition[0].z && mapPos.z < voxelTexturePosition[0].z + sizeTexutre.z) {
-    //     return texelFetch(voxelTexture[0], mapPos, 0);
-    // }
     for (int i = 0;i < 8;i++) {
         if (mapPos.x >= voxelTexturePosition[i].x && mapPos.x < (voxelTexturePosition[i].x + sizeTexutre.x) &&
             mapPos.y >= voxelTexturePosition[i].y && mapPos.y < (voxelTexturePosition[i].y + sizeTexutre.y) &&
@@ -54,20 +48,16 @@ vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
     int multiplicator = 1;
 
     while (steps > 0) {
-        // if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
-        //     mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
-        //     mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
-            uvec4 sdf = fetchData(mapPos);
-            if (sdf.r == 0) {
-                vec4 val = unpackUnorm4x8(colorData[sdf.g]);
-                if (val.w != opacity) {
-                    return vec4(val.rgb * sdf.b / 255.0, 1);
-                }
-                multiplicator = 1;
-            } else {
-                multiplicator = int(sdf.r);
+        uvec4 sdf = fetchData(mapPos);
+        if (sdf.r == 0) {
+            vec4 val = unpackUnorm4x8(colorData[sdf.g]);
+            if (val.w != opacity) {
+                return vec4(val.rgb * sdf.b / 255.0, 1);
             }
-        // }
+            multiplicator = 1;
+        } else {
+            multiplicator = int(sdf.r);
+        }
         steps -= multiplicator;
         int u = 0;
         while (u < multiplicator) {
@@ -177,16 +167,12 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
     int steps = MAX_RAY_STEPS;
 
     while (steps > 0) {
-        // if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
-        //     mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
-        //     mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
-            uvec4 sdf = fetchData(mapPos);
-            if (sdf.r == 0) {
-                return computeColor (mapPos, rayPos, mask, steps);
-            } else {
-                multiplicator = int(sdf.r);
-            }
-        // }
+        uvec4 sdf = fetchData(mapPos);
+        if (sdf.r == 0) {
+            return computeColor (mapPos, rayPos, mask, steps);
+        } else {
+            multiplicator = int(sdf.r);
+        }
         steps -= multiplicator;
         int u = 0;
         while (u < multiplicator) {

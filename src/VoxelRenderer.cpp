@@ -74,6 +74,19 @@ void VoxelRenderer::draw ()
     updateCamera();
     moveSun();
 }
+void VoxelRenderer::updateShadows ()
+{
+    glUseProgram(_computeShader);
+    for (auto &chunk : _chunks) {
+        chunk->updateShadows(_computeShader, _computeShaderAverage, _sun_tansformation);
+    }
+    glUniformMatrix4fv(glGetUniformLocation(_computeShader, "sunTransformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
+    glUniform3f(glGetUniformLocation(_computeShader, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform1i(glGetUniformLocation(_computeShader, "sdf"), 0);
+
+    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
 
 void VoxelRenderer::moveSun ()
 {
