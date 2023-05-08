@@ -54,23 +54,26 @@ void VoxelRenderer::draw ()
 {
     glUseProgram(_shaderProgram);
     glBindVertexArray(_VAO);
-    _chunks[0]->bindTextures(_shaderProgram);
+    for (size_t i = 0;i < _chunks.size();i++) {
+        _chunks[i]->bindTextures(_shaderProgram, i);
+    }
     glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "MVP"), 1, GL_FALSE, &_proj[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_position"), _camera_position.x, _camera_position.y, _camera_position.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_direction"), _camera_direction.x, _camera_direction.y, _camera_direction.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform1i(glGetUniformLocation(_shaderProgram, "nbrTexture"), _chunks.size());
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    _chunks[0]->unbindTextures();
+    for (size_t i = 0;i < _chunks.size();i++) {
+        _chunks[i]->unbindTextures();
+    }
 
     glfwGetCursorPos(_window, &_last_x, &_last_y);
     glfwPollEvents();
     updateCamera();
     moveSun();
 }
-
 
 void VoxelRenderer::moveSun ()
 {
@@ -336,8 +339,18 @@ std::vector<Chunk*> VoxelRenderer::voxelDataToChunks (std::vector<Voxel> voxels,
         for (int y = 0;y < sizeY;y++) {
             for (int x = 0;x < sizeX;x++) {
                 Voxel voxel = voxels[x + (y * sizeX) + (z * sizeX * sizeY)];
-                int pos = (x / CHUNK_SIZE) + ((y / CHUNK_SIZE) * (sizeX / CHUNK_SIZE)) + ((z / CHUNK_SIZE) * (sizeX / CHUNK_SIZE) * (sizeY / CHUNK_SIZE));
+                int pos = (x / CHUNK_SIZE) + ((y / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1)) + ((z / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1) * (sizeY / CHUNK_SIZE + 1));
                 chunks[pos]->setVoxel(x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE, voxel);
+            }
+        }
+    }
+    for (int z = 0;z < sizeZ;z += CHUNK_SIZE) {
+        for (int y = 0;y < sizeY;y += CHUNK_SIZE) {
+            for (int x = 0;x < sizeX;x += CHUNK_SIZE) {
+                int pos = (x / CHUNK_SIZE) + ((y / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1)) + ((z / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1) * (sizeY / CHUNK_SIZE + 1));
+                chunks[pos]->setPosition(x, y, z);
+                printf("Chunk %d %d %d\n", x, y, z);
+                printf("pos %d\n", pos);
             }
         }
     }

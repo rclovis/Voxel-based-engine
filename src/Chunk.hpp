@@ -10,7 +10,7 @@
 #include <logger.hpp>
 #include <unordered_map>
 
-#define CHUNK_SIZE 150
+#define CHUNK_SIZE 64
 #define SDF_LIMIT 7
 
 struct Voxel {
@@ -27,6 +27,8 @@ struct Color {
     unsigned char a;
 };
 
+
+
 class Chunk {
     public:
         Chunk();
@@ -34,17 +36,19 @@ class Chunk {
         void updateSdf(GLuint computeShader, glm::mat4 sun_tansformation);
         void updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm::mat4 sun_tansformation);
         void setPalette (std::vector<unsigned int> palette);
+        void setPosition (int x, int y, int z);
         void loadData();
         void unbindTextures();
-        void bindTextures(GLuint shader);
+        void bindTextures(GLuint shader, int index);
         void setVoxel (int x, int y, int z, Voxel voxel);
 
     protected:
     private:
         std::vector<Voxel> _voxels;
-        GLuint _textureColor;
-        GLuint _textureShade;
         GLuint _textureSDF;
         GLuint _textureInfo;
         GLuint _colorPalette;
+        int _X;
+        int _Y;
+        int _Z;
 };

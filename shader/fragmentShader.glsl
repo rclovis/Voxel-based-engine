@@ -4,20 +4,47 @@ in vec3 cameraPosition;
 in mat4 cameraDirection;
 in mat4 sunTransformaton;
 in vec3 sizeTexutre;
-
+in flat int numberOfTextures;
 out vec4 fragColor;
 
-uniform usampler3D voxelTexture;
+uniform usampler3D voxelTexture[30];
+uniform ivec3 voxelTexturePosition[30];
 
 uniform colorPalette {
-    uint data[256];
+    uint colorData[256];
 };
-
 
 const float VOXEL_SIZE = 10;
 const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
+
+vec3 test[8] = vec3[](
+    vec3(0, 0, 0),
+    vec3(64, 0, 0),
+    vec3(0, 64, 0),
+    vec3(64, 64, 0),
+    vec3(0, 0, 64),
+    vec3(64, 0, 64),
+    vec3(0, 64, 64),
+    vec3(64, 64, 64)
+);
+uvec4 fetchData (ivec3 mapPos) {
+    // return texelFetch(voxelTexture[0], mapPos, 0);
+    // if (mapPos.x >= voxelTexturePosition[0].x && mapPos.x < voxelTexturePosition[0].x + sizeTexutre.x &&
+    //     mapPos.y >= voxelTexturePosition[0].y && mapPos.y < voxelTexturePosition[0].y + sizeTexutre.y &&
+    //     mapPos.z >= voxelTexturePosition[0].z && mapPos.z < voxelTexturePosition[0].z + sizeTexutre.z) {
+    //     return texelFetch(voxelTexture[0], mapPos, 0);
+    // }
+    for (int i = 0;i < 8;i++) {
+        if (mapPos.x >= voxelTexturePosition[i].x && mapPos.x < (voxelTexturePosition[i].x + sizeTexutre.x) &&
+            mapPos.y >= voxelTexturePosition[i].y && mapPos.y < (voxelTexturePosition[i].y + sizeTexutre.y) &&
+            mapPos.z >= voxelTexturePosition[i].z && mapPos.z < (voxelTexturePosition[i].z + sizeTexutre.z)) {
+            return texelFetch(voxelTexture[i], ivec3(mapPos.x - voxelTexturePosition[i].x, mapPos.y - voxelTexturePosition[i].y, mapPos.z - voxelTexturePosition[i].z), 0);
+        }
+    }
+    return uvec4(1, 0, 0, 0);
+}
 
 vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
     ivec3 mapPos = ivec3(rayPos);
@@ -27,20 +54,20 @@ vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
     int multiplicator = 1;
 
     while (steps > 0) {
-        if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
-            mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
-            mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
-            uvec4 sdf = texelFetch(voxelTexture, mapPos, 0);
+        // if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
+        //     mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
+        //     mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
+            uvec4 sdf = fetchData(mapPos);
             if (sdf.r == 0) {
-                vec4 val = unpackUnorm4x8(data[sdf.g]);
+                vec4 val = unpackUnorm4x8(colorData[sdf.g]);
                 if (val.w != opacity) {
-                    return vec4(val.rgb * texelFetch(voxelTexture, mapPos, 0).b / 255.0, 1);
+                    return vec4(val.rgb * sdf.b / 255.0, 1);
                 }
                 multiplicator = 1;
             } else {
                 multiplicator = int(sdf.r);
             }
-        }
+        // }
         steps -= multiplicator;
         int u = 0;
         while (u < multiplicator) {
@@ -102,7 +129,7 @@ bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float c
 vec4 SpecularShading (vec3 reflect_ray, ivec3 texel_pos)
 {
     float specular = 0;
-    if (texelFetch(voxelTexture, texel_pos, 0).b > 100) {
+    if (fetchData(texel_pos).b > 100) {
         specular = pow(max(0, dot(reflect_ray, normalize(sunPosition))), 32);
     }
     return vec4(1, 1, 1, specular);
@@ -111,7 +138,7 @@ vec4 SpecularShading (vec3 reflect_ray, ivec3 texel_pos)
 vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
 {
     vec4 finalColor = vec4(0, 0, 0, 0);
-    vec4 val = unpackUnorm4x8(data[texelFetch(voxelTexture, mapPos, 0).g]);
+    vec4 val = unpackUnorm4x8(colorData[fetchData(mapPos).g]);
     if (val.w != 1) {
         vec3 dir = normalize(vec3(mapPos) - rayPos);
         vec3 pos = mapPos;
@@ -130,7 +157,7 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
     }
     finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w);
     float shadow = 1;
-    float light = (texelFetch(voxelTexture, mapPos + mask, 0).b) / 255.0;
+    float light = (fetchData(mapPos + mask).b) / 255.0;
     float diffuse = max(0, dot(sunPosition, vec3(mask))) * 1.1;
     if (light < 0.15) light = 0.15;
     if (diffuse < 0.15) diffuse = 0.15;
@@ -150,16 +177,16 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
     int steps = MAX_RAY_STEPS;
 
     while (steps > 0) {
-        if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
-            mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
-            mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
-            uvec4 sdf = texelFetch(voxelTexture, mapPos, 0);
+        // if (mapPos.x >= 0 && mapPos.x < (sizeTexutre.x) &&
+        //     mapPos.y >= 0 && mapPos.y < (sizeTexutre.y) &&
+        //     mapPos.z >= 0 && mapPos.z < (sizeTexutre.z)) {
+            uvec4 sdf = fetchData(mapPos);
             if (sdf.r == 0) {
                 return computeColor (mapPos, rayPos, mask, steps);
             } else {
                 multiplicator = int(sdf.r);
             }
-        }
+        // }
         steps -= multiplicator;
         int u = 0;
         while (u < multiplicator) {
@@ -197,9 +224,9 @@ void main()
         vec4(vec4(fragPosition, 0.0, 1.0) * cameraDirection).xyz
         - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz
     );
-    if (rayIsIntersectingTexture(rayDirection, cameraPosition, vec3(0.0, 0.0, 0.0), sizeTexutre.x * VOXEL_SIZE) == false) {
-        fragColor = vec4(1, 1, 1, 0.1);
-    } else {
+    // if (rayIsIntersectingTexture(rayDirection, cameraPosition, vec3(0.0, 0.0, 0.0), sizeTexutre.x * VOXEL_SIZE) == false) {
+    //     fragColor = vec4(1, 1, 1, 0.1);
+    // } else {
         fragColor = raycast(cameraPosition, rayDirection);
-    }
+    // }
 }

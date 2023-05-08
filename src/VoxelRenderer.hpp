@@ -44,6 +44,7 @@ class VoxelRenderer
         GLuint _shaderProgram;
         GLuint _computeShader;
         GLuint _computeShaderAverage;
+        GLuint _textureArray;
 
         glm::mat4 _proj;
         glm::mat4 _view;

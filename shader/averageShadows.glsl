@@ -23,39 +23,7 @@ void main()
             imageLoad(outputTexture, texel + ivec3(0, -1, 0)).b +
             imageLoad(outputTexture, texel + ivec3(1, 0, 0)).b +
             imageLoad(outputTexture, texel + ivec3(-1, 0, 0)).b;
-        //     imageLoad(outputTexture, texel + ivec3(0, 1, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(0, 1, -1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(0, -1, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(0, -1, -1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, 0, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, 0, -1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, 0, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, 0, -1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, 1, 0)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, -1, 0)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, 1, 0)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, -1, 0)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, 1, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, 1, -1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, -1, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(1, -1, -1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, 1, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, 1, -1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, -1, 1)).b +
-        //     imageLoad(outputTexture, texel + ivec3(-1, -1, -1)).b;
         finalShadow = finalShadow / 7;
-        // uint faces [6] = {
-        //     imageLoad(outputTexture, texel + ivec3(0, 0, 1)).b,
-        //     imageLoad(outputTexture, texel + ivec3(0, 0, -1)).b,
-        //     imageLoad(outputTexture, texel + ivec3(0, 1, 0)).b,
-        //     imageLoad(outputTexture, texel + ivec3(0, -1, 0)).b,
-        //     imageLoad(outputTexture, texel + ivec3(1, 0, 0)).b,
-        //     imageLoad(outputTexture, texel + ivec3(-1, 0, 0)).b
-        // };
-        // uint max_s = 0;
-        // for (int i = 0;i < 6;i++) {
-        //     if (faces[i] > max_s) max_s = faces[i];
-        // }
         imageStore(tmp, texel, ivec4(finalShadow, 0, 0, 0));
     } else {
         uvec4 data = imageLoad(outputTexture, texel);

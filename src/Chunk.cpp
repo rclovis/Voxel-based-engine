@@ -144,12 +144,14 @@ void Chunk::loadData()
     glBindTexture(GL_TEXTURE_3D, 0);
 }
 
-void Chunk::bindTextures (GLuint shader)
+void Chunk::bindTextures (GLuint shader, int index)
 {
-    glBindImageTexture(0, _textureInfo, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
-    glUniform1i(glGetUniformLocation(shader, "voxelTexture"), 0);
-    glActiveTexture(GL_TEXTURE0);
+    // glBindImageTexture(0, _textureInfo, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    glUniform1i(glGetUniformLocation(shader, ("voxelTexture[" + std::to_string(index) + "]").c_str()), index);
+    glActiveTexture(GL_TEXTURE0 + index);
     glBindTexture(GL_TEXTURE_3D, _textureInfo);
+    glUniform3i(glGetUniformLocation(shader, ("voxelTexturePosition[" + std::to_string(index) + "]").c_str()), _X, _Y, _Z);
+    // printf("Chunk %d %d %d\n", _X, _Y, _Z);
 
     GLuint blockIndex = glGetUniformBlockIndex(shader, "colorPalette");
     glUniformBlockBinding(shader, blockIndex, 0);
@@ -157,7 +159,7 @@ void Chunk::bindTextures (GLuint shader)
 }
 
 
-void Chunk::unbindTextures ()
+void Chunk::unbindTextures()
 {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, 0);
@@ -174,4 +176,11 @@ void Chunk::setPalette (std::vector<unsigned int> palette)
     glGenBuffers(1, &_colorPalette);
     glBindBuffer(GL_UNIFORM_BUFFER, _colorPalette);
     glBufferData(GL_UNIFORM_BUFFER, 256 * sizeof(unsigned int), palette.data(), GL_STATIC_DRAW);
+}
+
+void Chunk::setPosition (int x, int y, int z)
+{
+    _X = x;
+    _Y = y;
+    _Z = z;
 }
