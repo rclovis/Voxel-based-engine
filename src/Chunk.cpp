@@ -11,7 +11,7 @@ Chunk::~Chunk()
 
 void Chunk::updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm::mat4 sun_tansformation)
 {
-    // glUseProgram(computeShader);
+    glUseProgram(computeShader);
     glBindImageTexture(0, _textureInfo, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
 
     glUniform1i(glGetUniformLocation(computeShader, "outputTexture"), 0);
@@ -22,12 +22,12 @@ void Chunk::updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm
     glUniformBlockBinding(computeShader, blockIndex, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, _colorPalette);
 
-    // glUniformMatrix4fv(glGetUniformLocation(computeShader, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
-    // glUniform3f(glGetUniformLocation(computeShader, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
-    // glUniform1i(glGetUniformLocation(computeShader, "sdf"), 0);
+    glUniformMatrix4fv(glGetUniformLocation(computeShader, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
+    glUniform3f(glGetUniformLocation(computeShader, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform1i(glGetUniformLocation(computeShader, "sdf"), 0);
 
-    // glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
-    // glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
     glActiveTexture(GL_TEXTURE0);
@@ -89,6 +89,23 @@ void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
 
 void Chunk::loadData()
 {
+
+    for (int z = 0; z < CHUNK_SIZE; z++) {
+        for (int y = 0; y < CHUNK_SIZE; y++) {
+            for (int x = 0; x < CHUNK_SIZE; x++) {
+                int index = x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE;
+                int tmp1 = std::min(std::min(x, y), z) + 1;
+                int tmp2 = std::min(std::min(CHUNK_SIZE - x, CHUNK_SIZE - y), CHUNK_SIZE - z);
+                int tmp3 = std::min(tmp1, tmp2);
+                if (tmp3 < SDF_LIMIT) _voxels[index].distance = tmp3;
+                // printf("%d ", _voxels[index].distance);
+            }
+            // printf("\n");
+        }
+        // printf("\n\n");
+    }
+    // exit(0);
+
     glGenTextures(1, &_textureInfo);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_3D, _textureInfo);
@@ -103,6 +120,17 @@ void Chunk::loadData()
 
 
     std::vector<int> distance(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, SDF_LIMIT);
+
+    for (int z = 0; z < CHUNK_SIZE; z++) {
+        for (int y = 0; y < CHUNK_SIZE; y++) {
+            for (int x = 0; x < CHUNK_SIZE; x++) {
+                int index = x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE;
+                distance[index] = _voxels[index].distance;
+            }
+            // printf("\n");
+        }
+        // printf("\n\n");
+    }
 
     glGenTextures(1, &_textureSDF);
     glActiveTexture(GL_TEXTURE0);

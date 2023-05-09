@@ -14,8 +14,9 @@ uniform colorPalette {
     uint colorData[256];
 };
 
-const float VOXEL_SIZE = 10;
-const int MAX_RAY_STEPS = 400;
+const float VOXEL_SIZE = 100;
+const int MAX_RAY_STEPS = 200;
+const bool distanceDisplay = false;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
@@ -165,13 +166,20 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
     ivec3 mask = ivec3(0, 0, 0);
     int multiplicator = 1;
     int steps = MAX_RAY_STEPS;
+    int numberOfChecks = 0;
+    int numberOfJump = 0;
 
     while (steps > 0) {
         uvec4 sdf = fetchData(mapPos);
+        numberOfChecks++;
         if (sdf.r == 0) {
-            return computeColor (mapPos, rayPos, mask, steps);
+            if (distanceDisplay)
+                return mix(computeColor (mapPos, rayPos, mask, steps), vec4(1, 0, 0, 1),  float(numberOfChecks) / float(numberOfJump));
+            else
+                return computeColor (mapPos, rayPos, mask, steps);
         } else {
             multiplicator = int(sdf.r);
+            numberOfJump += multiplicator;
         }
         steps -= multiplicator;
         int u = 0;
@@ -200,7 +208,10 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
             u++;
         }
     }
-    return vec4(0, 0, 0, 0);
+    if (distanceDisplay)
+        return mix(vec4(0, 0, 0, 0), vec4(1, 0, 0, 1),  float(numberOfChecks) / float(numberOfJump));
+    else
+        return vec4(0, 0, 0, 0);
 }
 
 void main()
@@ -210,9 +221,5 @@ void main()
         vec4(vec4(fragPosition, 0.0, 1.0) * cameraDirection).xyz
         - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz
     );
-    // if (rayIsIntersectingTexture(rayDirection, cameraPosition, vec3(0.0, 0.0, 0.0), sizeTexutre.x * VOXEL_SIZE) == false) {
-    //     fragColor = vec4(1, 1, 1, 0.1);
-    // } else {
-        fragColor = raycast(cameraPosition, rayDirection);
-    // }
+    fragColor = raycast(cameraPosition, rayDirection);
 }

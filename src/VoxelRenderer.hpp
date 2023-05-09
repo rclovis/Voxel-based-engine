@@ -31,7 +31,6 @@ class VoxelRenderer
         void updateCamera();
         void draw();
         void moveSun();
-        void updateShadows();
         std::vector<Chunk*> voxelDataToChunks (std::vector<Voxel> voxels, int sizeX, int sizeY, int sizeZ, std::vector<unsigned int> colors);
         std::vector<Chunk*> loadVox(const char *path);
 

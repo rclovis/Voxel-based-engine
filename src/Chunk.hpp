@@ -27,8 +27,6 @@ struct Color {
     unsigned char a;
 };
 
-
-
 class Chunk {
     public:
         Chunk();

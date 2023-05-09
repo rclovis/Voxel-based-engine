@@ -2,8 +2,8 @@
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-layout(binding = 0, rgba8ui) uniform uimage3D outputTexture[];
-layout(binding = 1, r32i) uniform iimage3D sdfTexture[];
+layout(binding = 0, rgba8ui) uniform uimage3D outputTexture;
+layout(binding = 1, r32i) uniform iimage3D sdfTexture;
 layout(binding = 2) uniform colorPalette {
     uint data[256];
 };
@@ -21,21 +21,21 @@ vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformation).xyz;
 
 bool shouldBeComputed (vec3 rayPos)
 {
-    if (imageLoad(outputTexture[0], ivec3(rayPos)).r == 0) return true;
-    if (imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, 0, 1))).r == 0 &&
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, 0, -1))).r == 0 &&
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, 1, 0))).r == 0 &&
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, -1, 0))).r == 0 &&
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(1, 0, 0))).r == 0 &&
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(-1, 0, 0))).r == 0) {
+    if (imageLoad(outputTexture, ivec3(rayPos)).r == 0) return true;
+    if (imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, 1))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, -1))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 1, 0))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, -1, 0))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(1, 0, 0))).r == 0 &&
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(-1, 0, 0))).r == 0) {
         return false;
     }
-    if (imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, 0, 1))).r == 0 ||
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, 0, -1))).r == 0 ||
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, 1, 0))).r == 0 ||
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(0, -1, 0))).r == 0 ||
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(1, 0, 0))).r == 0 ||
-        imageLoad(outputTexture[0], ivec3(rayPos + ivec3(-1, 0, 0))).r == 0) {
+    if (imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, 1))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 0, -1))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, 1, 0))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(0, -1, 0))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(1, 0, 0))).r == 0 ||
+        imageLoad(outputTexture, ivec3(rayPos + ivec3(-1, 0, 0))).r == 0) {
         return true;
     }
     return false;
@@ -57,7 +57,7 @@ uint raycastLignt(vec3 rayPos, vec3 rayDir)
         if (mapPos.x >= 0 && mapPos.x < (size.x) &&
             mapPos.y >= 0 && mapPos.y < (size.y) &&
             mapPos.z >= 0 && mapPos.z < (size.z) && mapPos != ivec3(rayPos)) {
-            uvec4 sdf = imageLoad(outputTexture[0], ivec3(mapPos));
+            uvec4 sdf = imageLoad(outputTexture, ivec3(mapPos));
             if (sdf.r == 0) {
                 vec4 val = unpackUnorm4x8(data[sdf.g]);
                 opacity *= (1 - (val.w));
@@ -97,14 +97,17 @@ uint raycastLignt(vec3 rayPos, vec3 rayDir)
 
 uint distance_c (ivec3 a, ivec3 b)
 {
-    return uint(max(max(abs(b.x - a.x), abs(b.y - a.y)), abs(b.z - a.z)));
+    uint dist = uint(max(max(abs(b.x - a.x), abs(b.y - a.y)), abs(b.z - a.z)));
+    // if (dist > a.x || dist > a.y || dist > a.z) return uint(min(a.x, min(a.y, a.z)));
+    // if (dist > size.x - a.x || dist > size.y - a.y || dist > size.z - a.z) return uint(min(size.x - a.x, min(size.y - a.y, size.z - a.z)));
     // return abs(a.x - b.x) + abs(a.y - b.y) + abs(a.z - b.z);
+    return dist;
 }
 
 void main()
 {
     ivec3 texel = ivec3(gl_GlobalInvocationID.xyz);
-    uvec4 data = imageLoad(outputTexture[0], texel);
+    uvec4 data = imageLoad(outputTexture, texel);
     uint result = 0;
 
     if (sdf == 1) {
@@ -118,19 +121,19 @@ void main()
                     if (i < size.x && j < size.y && k < size.z && i >= 0 && j >= 0 && k >= 0) {
                         ivec3 pos = ivec3(i, j, k);
                         uint dist = distance_c(pos, texel);
-                        uvec4 localData = imageLoad(outputTexture[0], pos);
-                        if (imageAtomicMin(sdfTexture[0], pos, int(dist)) > dist) {
-                            imageStore(outputTexture[0], pos, uvec4(dist, localData.g, localData.b, localData.a));
-                            imageStore(sdfTexture[0], pos, ivec4(dist, 0, 0, 0));
+                        uvec4 localData = imageLoad(outputTexture, pos);
+                        if (imageAtomicMin(sdfTexture, pos, int(dist)) > dist) {
+                            imageStore(outputTexture, pos, uvec4(dist, localData.g, localData.b, localData.a));
+                            imageStore(sdfTexture, pos, ivec4(dist, 0, 0, 0));
                         }
                     }
                 }
             }
         }
-        imageStore(outputTexture[0], texel, uvec4(0, data.g, data.b, data.a));
+        imageStore(outputTexture, texel, uvec4(0, data.g, data.b, data.a));
     } else {
         vec3 posVoxel = vec3(texel);
         uint shadow = raycastLignt(vec3(posVoxel.x, posVoxel.y, posVoxel.z), sunPosition);
-        imageStore(outputTexture[0], texel, uvec4(data.r, data.g, shadow, data.a));
+        imageStore(outputTexture, texel, uvec4(data.r, data.g, shadow, data.a));
     }
 }
