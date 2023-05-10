@@ -14,23 +14,46 @@ uniform colorPalette {
     uint colorData[256];
 };
 
-const float VOXEL_SIZE = 100;
+const float VOXEL_SIZE = 10;
 const int MAX_RAY_STEPS = 200;
-const bool distanceDisplay = false;
+const bool distanceDisplay = true;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
-vec3 test[8] = vec3[](
-    vec3(0, 0, 0),
-    vec3(64, 0, 0),
-    vec3(0, 64, 0),
-    vec3(64, 64, 0),
-    vec3(0, 0, 64),
-    vec3(64, 0, 64),
-    vec3(0, 64, 64),
-    vec3(64, 64, 64)
-);
-uvec4 fetchData (ivec3 mapPos) {
+ivec3 rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float cubeSize) {
+    float tmin = 0;
+    float tmax = MAX_RAY_STEPS * VOXEL_SIZE;
+    vec3 normal = vec3(0, 0, 0);
+
+    for (int i = 0; i < 3; i++) {
+        if (abs(rayDir[i]) < 1e-6) {
+            if (rayOrigin[i] < cubePos[i] || rayOrigin[i] > cubePos[i] + cubeSize) {
+                return ivec3(0, 0, 0);
+            }
+        } else {
+            float t1 = (cubePos[i] - rayOrigin[i]) / rayDir[i];
+            float t2 = (cubePos[i] + cubeSize - rayOrigin[i]) / rayDir[i];
+            if (t1 > t2) {
+                float temp = t1;
+                t1 = t2;
+                t2 = temp;
+            }
+            if (t1 > tmin) {
+                tmin = t1;
+            }
+            if (t2 < tmax) {
+                tmax = t2;
+            }
+            if (tmin > tmax) {
+                return ivec3(0, 0, 0);
+            }
+        }
+    }
+    ivec3 coordinates = ivec3(rayOrigin + rayDir * tmin);
+    return coordinates;
+}
+
+uvec4 fetchData (ivec3 mapPos, vec3 rayDir) {
     for (int i = 0;i < 8;i++) {
         if (mapPos.x >= voxelTexturePosition[i].x && mapPos.x < (voxelTexturePosition[i].x + sizeTexutre.x) &&
             mapPos.y >= voxelTexturePosition[i].y && mapPos.y < (voxelTexturePosition[i].y + sizeTexutre.y) &&
@@ -38,6 +61,25 @@ uvec4 fetchData (ivec3 mapPos) {
             return texelFetch(voxelTexture[i], ivec3(mapPos.x - voxelTexturePosition[i].x, mapPos.y - voxelTexturePosition[i].y, mapPos.z - voxelTexturePosition[i].z), 0);
         }
     }
+    if (rayDir != ivec3(0, 0, 0)) {
+        uint distanceV[] = uint[](MAX_RAY_STEPS, MAX_RAY_STEPS, MAX_RAY_STEPS, MAX_RAY_STEPS, MAX_RAY_STEPS, MAX_RAY_STEPS, MAX_RAY_STEPS, MAX_RAY_STEPS);
+        for (int i = 0;i < 8;i++) {
+            ivec3 p = rayIsIntersectingTexture(rayDir, vec3(mapPos), vec3(voxelTexturePosition[i]), sizeTexutre.x);
+            if (p != ivec3(0, 0, 0)) {
+                // distance[i] = length(vec3(p) - vec3(mapPos));
+                distanceV[i] = uint(max(max(abs(p.x - mapPos.x), abs(p.y - mapPos.y)), abs(p.z - mapPos.z)));
+                // return uvec4(uint(max(max(abs(p.x - mapPos.x), abs(p.y - mapPos.y)), abs(p.z - mapPos.z))), 0, 0, 0);
+            }
+        }
+        uint minV = MAX_RAY_STEPS;
+        for (int i = 0;i < 8;i++) {
+            if (distanceV[i] < minV) {
+                minV = distanceV[i];
+            }
+        }
+        return uvec4(minV + 1, 0, 0, 0);
+    }
+
     return uvec4(1, 0, 0, 0);
 }
 
@@ -49,7 +91,7 @@ vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
     int multiplicator = 1;
 
     while (steps > 0) {
-        uvec4 sdf = fetchData(mapPos);
+        uvec4 sdf = fetchData(mapPos, rayDir);
         if (sdf.r == 0) {
             vec4 val = unpackUnorm4x8(colorData[sdf.g]);
             if (val.w != opacity) {
@@ -60,6 +102,7 @@ vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
             multiplicator = int(sdf.r);
         }
         steps -= multiplicator;
+        if (steps < 0) break;
         int u = 0;
         while (u < multiplicator) {
             if (sideDist.x < sideDist.y) {
@@ -85,42 +128,10 @@ vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
     return vec4(0, 0, 0, 0);
 }
 
-bool rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float cubeSize) {
-    float tmin = 0;
-    float tmax = MAX_RAY_STEPS * VOXEL_SIZE;
-    vec3 normal = vec3(0, 0, 0);
-
-    for (int i = 0; i < 3; i++) {
-        if (abs(rayDir[i]) < 1e-6) {
-            if (rayOrigin[i] < cubePos[i] || rayOrigin[i] > cubePos[i] + cubeSize) {
-                return false;
-            }
-        } else {
-            float t1 = (cubePos[i] - rayOrigin[i]) / rayDir[i];
-            float t2 = (cubePos[i] + cubeSize - rayOrigin[i]) / rayDir[i];
-            if (t1 > t2) {
-                float temp = t1;
-                t1 = t2;
-                t2 = temp;
-            }
-            if (t1 > tmin) {
-                tmin = t1;
-            }
-            if (t2 < tmax) {
-                tmax = t2;
-            }
-            if (tmin > tmax) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 vec4 SpecularShading (vec3 reflect_ray, ivec3 texel_pos)
 {
     float specular = 0;
-    if (fetchData(texel_pos).b > 100) {
+    if (fetchData(texel_pos, ivec3(0, 0, 0)).b > 100) {
         specular = pow(max(0, dot(reflect_ray, normalize(sunPosition))), 32);
     }
     return vec4(1, 1, 1, specular);
@@ -129,7 +140,7 @@ vec4 SpecularShading (vec3 reflect_ray, ivec3 texel_pos)
 vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
 {
     vec4 finalColor = vec4(0, 0, 0, 0);
-    vec4 val = unpackUnorm4x8(colorData[fetchData(mapPos).g]);
+    vec4 val = unpackUnorm4x8(colorData[fetchData(mapPos, ivec3(0, 0, 0)).g]);
     if (val.w != 1) {
         vec3 dir = normalize(vec3(mapPos) - rayPos);
         vec3 pos = mapPos;
@@ -148,7 +159,7 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
     }
     finalColor = vec4(mix(finalColor.xyz, val.xyz, 1 - finalColor.w), val.w);
     float shadow = 1;
-    float light = (fetchData(mapPos + mask).b) / 255.0;
+    float light = (fetchData(mapPos + mask, ivec3(0, 0, 0)).b) / 255.0;
     float diffuse = max(0, dot(sunPosition, vec3(mask))) * 1.1;
     if (light < 0.15) light = 0.15;
     if (diffuse < 0.15) diffuse = 0.15;
@@ -170,7 +181,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
     int numberOfJump = 0;
 
     while (steps > 0) {
-        uvec4 sdf = fetchData(mapPos);
+        uvec4 sdf = fetchData(mapPos, rayDir);
         numberOfChecks++;
         if (sdf.r == 0) {
             if (distanceDisplay)
@@ -182,6 +193,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
             numberOfJump += multiplicator;
         }
         steps -= multiplicator;
+        if (steps < 0) break;
         int u = 0;
         while (u < multiplicator) {
             if (sideDist.x < sideDist.y) {
