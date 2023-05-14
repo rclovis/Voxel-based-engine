@@ -16,7 +16,7 @@ uniform colorPalette {
 
 const float VOXEL_SIZE = 10;
 const int MAX_RAY_STEPS = 200;
-const bool distanceDisplay = true;
+const bool distanceDisplay = false;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
@@ -49,8 +49,40 @@ ivec3 rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float 
             }
         }
     }
-    ivec3 coordinates = ivec3(rayOrigin + rayDir * tmin);
-    return coordinates;
+    ivec3 pointCoord = ivec3(rayOrigin + rayDir * tmin);
+    return pointCoord;
+}
+
+float moveRayToTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float cubeSize) {
+    float tmin = 0;
+    float tmax = MAX_RAY_STEPS * VOXEL_SIZE;
+    vec3 normal = vec3(0, 0, 0);
+
+    for (int i = 0; i < 3; i++) {
+        if (abs(rayDir[i]) < 1e-6) {
+            if (rayOrigin[i] < cubePos[i] || rayOrigin[i] > cubePos[i] + cubeSize) {
+                return MAX_RAY_STEPS * VOXEL_SIZE;
+            }
+        } else {
+            float t1 = (cubePos[i] - rayOrigin[i]) / rayDir[i];
+            float t2 = (cubePos[i] + cubeSize - rayOrigin[i]) / rayDir[i];
+            if (t1 > t2) {
+                float temp = t1;
+                t1 = t2;
+                t2 = temp;
+            }
+            if (t1 > tmin) {
+                tmin = t1;
+            }
+            if (t2 < tmax) {
+                tmax = t2;
+            }
+            if (tmin > tmax) {
+                return MAX_RAY_STEPS * VOXEL_SIZE;
+            }
+        }
+    }
+    return tmin - VOXEL_SIZE;
 }
 
 uvec4 fetchData (ivec3 mapPos, vec3 rayDir) {
@@ -66,18 +98,19 @@ uvec4 fetchData (ivec3 mapPos, vec3 rayDir) {
         for (int i = 0;i < 8;i++) {
             ivec3 p = rayIsIntersectingTexture(rayDir, vec3(mapPos), vec3(voxelTexturePosition[i]), sizeTexutre.x);
             if (p != ivec3(0, 0, 0)) {
-                // distance[i] = length(vec3(p) - vec3(mapPos));
-                distanceV[i] = uint(max(max(abs(p.x - mapPos.x), abs(p.y - mapPos.y)), abs(p.z - mapPos.z)));
-                // return uvec4(uint(max(max(abs(p.x - mapPos.x), abs(p.y - mapPos.y)), abs(p.z - mapPos.z))), 0, 0, 0);
+                // distanceV[i] = uint(sqrt(pow(p.x - mapPos.x, 2) + pow(p.y - mapPos.y, 2) + pow(p.z - mapPos.z, 2)));
+                distanceV[i] = uint(max(max(abs(mapPos.x - p.x), abs(mapPos.y - p.y)), abs(mapPos.z - p.z)));
             }
         }
-        uint minV = MAX_RAY_STEPS;
+        int minV = MAX_RAY_STEPS;
         for (int i = 0;i < 8;i++) {
             if (distanceV[i] < minV) {
-                minV = distanceV[i];
+                minV = 1;
+                break;
             }
         }
-        return uvec4(minV + 1, 0, 0, 0);
+        // minV -= 7;
+        return uvec4(minV, 0, 0, 0);
     }
 
     return uvec4(1, 0, 0, 0);
@@ -233,5 +266,16 @@ void main()
         vec4(vec4(fragPosition, 0.0, 1.0) * cameraDirection).xyz
         - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz
     );
-    fragColor = raycast(cameraPosition, rayDirection);
+    float T[] = float[](MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE);
+    for (int i = 0;i < 8;i++) {
+        T[i] = moveRayToTexture(rayDirection, cameraPosition, vec3(voxelTexturePosition[i]), sizeTexutre.x * VOXEL_SIZE);
+    }
+    float minT = MAX_RAY_STEPS * VOXEL_SIZE;
+    for (int i = 0;i < 8;i++) {
+        if (T[i] < minT) minT = T[i];
+    }
+    if (minT != MAX_RAY_STEPS * VOXEL_SIZE)
+        fragColor = raycast(cameraPosition + rayDirection * minT, rayDirection);
+    else
+        fragColor = raycast(cameraPosition, rayDirection);
 }

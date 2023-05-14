@@ -10,7 +10,7 @@
 #include <logger.hpp>
 #include <unordered_map>
 
-#define CHUNK_SIZE 64
+#define CHUNK_SIZE 40
 #define SDF_LIMIT 7
 
 struct Voxel {
