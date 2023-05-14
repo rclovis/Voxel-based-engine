@@ -16,7 +16,7 @@ uniform colorPalette {
 
 const float VOXEL_SIZE = 10;
 const int MAX_RAY_STEPS = 200;
-const bool distanceDisplay = false;
+const bool distanceDisplay = true;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
@@ -267,12 +267,10 @@ void main()
         - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz
     );
     float T[] = float[](MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE);
-    for (int i = 0;i < 8;i++) {
-        T[i] = moveRayToTexture(rayDirection, cameraPosition, vec3(voxelTexturePosition[i]), sizeTexutre.x * VOXEL_SIZE);
-    }
     float minT = MAX_RAY_STEPS * VOXEL_SIZE;
     for (int i = 0;i < 8;i++) {
-        if (T[i] < minT) minT = T[i];
+        float tmp = moveRayToTexture(rayDirection, cameraPosition, vec3(voxelTexturePosition[i]), sizeTexutre.x * VOXEL_SIZE);
+        if (tmp < minT) minT = tmp;
     }
     if (minT != MAX_RAY_STEPS * VOXEL_SIZE)
         fragColor = raycast(cameraPosition + rayDirection * minT, rayDirection);

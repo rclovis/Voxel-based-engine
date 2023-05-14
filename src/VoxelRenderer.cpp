@@ -35,8 +35,8 @@ void VoxelRenderer::init(GLFWwindow* window)
     initCamera();
 
     // _chunks = loadVox("assets/torus.vox");
-    // _chunks = loadVox("assets/Temple.vox");
-    _chunks = loadVox("assets/untitled.vox");
+    _chunks = loadVox("assets/Temple.vox");
+    // _chunks = loadVox("assets/untitled.vox");
     // _chunks[0]->printChunk();
     // _chunks = loadVox("assets/pieta.vox");
     // _chunks = loadVox("assets/city.vox");
