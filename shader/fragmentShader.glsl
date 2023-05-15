@@ -16,7 +16,7 @@ uniform colorPalette {
 
 const float VOXEL_SIZE = 10;
 const int MAX_RAY_STEPS = 200;
-const bool distanceDisplay = true;
+const bool distanceDisplay = false;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
@@ -56,16 +56,16 @@ ivec3 rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float 
 float moveRayToTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float cubeSize) {
     float tmin = 0;
     float tmax = MAX_RAY_STEPS * VOXEL_SIZE;
-    vec3 normal = vec3(0, 0, 0);
+    rayOrigin -= cubePos * VOXEL_SIZE;
 
     for (int i = 0; i < 3; i++) {
         if (abs(rayDir[i]) < 1e-6) {
-            if (rayOrigin[i] < cubePos[i] || rayOrigin[i] > cubePos[i] + cubeSize) {
+            if (rayOrigin[i] < 0 || rayOrigin[i] > 0 + cubeSize) {
                 return MAX_RAY_STEPS * VOXEL_SIZE;
             }
         } else {
-            float t1 = (cubePos[i] - rayOrigin[i]) / rayDir[i];
-            float t2 = (cubePos[i] + cubeSize - rayOrigin[i]) / rayDir[i];
+            float t1 = (0 - rayOrigin[i]) / rayDir[i];
+            float t2 = (0 + cubeSize - rayOrigin[i]) / rayDir[i];
             if (t1 > t2) {
                 float temp = t1;
                 t1 = t2;
