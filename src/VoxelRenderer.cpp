@@ -21,12 +21,14 @@ VoxelRenderer::VoxelRenderer()
     _up_vector = glm::vec3(0, 1, 0);
 }
 
-void VoxelRenderer::init(GLFWwindow* window)
+void VoxelRenderer::init(GLFWwindow* window, std::string path, int chunkSize, int debug)
 {
+    _debug = debug;
     std::cout << LOG_VOXEL("Init VoxelRenderer");
     _window = window;
     glGenVertexArrays(1, &_VAO);
     glBindVertexArray(_VAO);
+    _chunkSize = chunkSize;
 
     _shaderProgram = LoadShaders("shader/vertexShader.glsl", "shader/fragmentShader.glsl");
     _computeShader = LoadComputeShader("shader/computeShader.glsl");
@@ -35,11 +37,12 @@ void VoxelRenderer::init(GLFWwindow* window)
     initCamera();
 
     // _chunks = loadVox("assets/torus.vox");
-    _chunks = loadVox("assets/Temple.vox");
+    // _chunks = loadVox("assets/Temple.vox");
     // _chunks = loadVox("assets/untitled.vox");
     // _chunks[0]->printChunk();
     // _chunks = loadVox("assets/pieta.vox");
     // _chunks = loadVox("assets/city.vox");
+    _chunks = loadVox(path.c_str());
 }
 
 void VoxelRenderer::initCamera()
@@ -61,8 +64,10 @@ void VoxelRenderer::draw ()
     glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_position"), _camera_position.x, _camera_position.y, _camera_position.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_direction"), _camera_direction.x, _camera_direction.y, _camera_direction.z);
-    glUniform3f(glGetUniformLocation(_shaderProgram, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform3f(glGetUniformLocation(_shaderProgram, "size"), _chunkSize, _chunkSize, _chunkSize);
     glUniform1i(glGetUniformLocation(_shaderProgram, "nbrTexture"), _chunks.size());
+    glUniform1i(glGetUniformLocation(_shaderProgram, "distanceDisplayv"), _debug);
+
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
     for (size_t i = 0;i < _chunks.size();i++) {
@@ -158,6 +163,7 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
     FILE *file = fopen(path, "rb");
     if (file == NULL) {
         printf("Error: Could not open file %s\n", path);
+        exit(84);
     }
     fseek(file, 16, SEEK_CUR);
     int totalSize;
@@ -327,10 +333,10 @@ std::vector<Chunk*> VoxelRenderer::loadVox(const char *path)
 std::vector<Chunk*> VoxelRenderer::voxelDataToChunks (std::vector<Voxel> voxels, int sizeX, int sizeY, int sizeZ, std::vector<unsigned int> colors)
 {
     std::vector<Chunk*> chunks;
-    for (int z = 0;z < sizeZ;z += CHUNK_SIZE) {
-        for (int y = 0;y < sizeY;y += CHUNK_SIZE) {
-            for (int x = 0;x < sizeX;x += CHUNK_SIZE) {
-                Chunk* chunk = new Chunk();
+    for (int z = 0;z < sizeZ;z += _chunkSize) {
+        for (int y = 0;y < sizeY;y += _chunkSize) {
+            for (int x = 0;x < sizeX;x += _chunkSize) {
+                Chunk* chunk = new Chunk(_chunkSize);
                 chunks.push_back(chunk);
             }
         }
@@ -339,15 +345,15 @@ std::vector<Chunk*> VoxelRenderer::voxelDataToChunks (std::vector<Voxel> voxels,
         for (int y = 0;y < sizeY;y++) {
             for (int x = 0;x < sizeX;x++) {
                 Voxel voxel = voxels[x + (y * sizeX) + (z * sizeX * sizeY)];
-                int pos = (x / CHUNK_SIZE) + ((y / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1)) + ((z / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1) * (sizeY / CHUNK_SIZE + 1));
-                chunks[pos]->setVoxel(x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE, voxel);
+                int pos = (x / _chunkSize) + ((y / _chunkSize) * (sizeX / _chunkSize + 1)) + ((z / _chunkSize) * (sizeX / _chunkSize + 1) * (sizeY / _chunkSize + 1));
+                chunks[pos]->setVoxel(x % _chunkSize, y % _chunkSize, z % _chunkSize, voxel);
             }
         }
     }
-    for (int z = 0;z < sizeZ;z += CHUNK_SIZE) {
-        for (int y = 0;y < sizeY;y += CHUNK_SIZE) {
-            for (int x = 0;x < sizeX;x += CHUNK_SIZE) {
-                int pos = (x / CHUNK_SIZE) + ((y / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1)) + ((z / CHUNK_SIZE) * (sizeX / CHUNK_SIZE + 1) * (sizeY / CHUNK_SIZE + 1));
+    for (int z = 0;z < sizeZ;z += _chunkSize) {
+        for (int y = 0;y < sizeY;y += _chunkSize) {
+            for (int x = 0;x < sizeX;x += _chunkSize) {
+                int pos = (x / _chunkSize) + ((y / _chunkSize) * (sizeX / _chunkSize + 1)) + ((z / _chunkSize) * (sizeX / _chunkSize + 1) * (sizeY / _chunkSize + 1));
                 chunks[pos]->setPosition(x, y, z);
             }
         }

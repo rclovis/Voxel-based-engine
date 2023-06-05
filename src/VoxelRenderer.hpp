@@ -26,7 +26,7 @@ class VoxelRenderer
     public:
         VoxelRenderer();
         ~VoxelRenderer();
-        void init(GLFWwindow* window);
+        void init(GLFWwindow* window, std::string path, int chunkSize, int debug);
         void initCamera();
         void updateCamera();
         void draw();
@@ -60,5 +60,7 @@ class VoxelRenderer
 
         double _last_x;
         double _last_y;
+        int _chunkSize;
+        int _debug;
 };
 

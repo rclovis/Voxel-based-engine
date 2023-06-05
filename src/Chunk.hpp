@@ -10,7 +10,7 @@
 #include <logger.hpp>
 #include <unordered_map>
 
-#define CHUNK_SIZE 64
+// #define CHUNK_SIZE 16
 #define SDF_LIMIT 7
 
 struct Voxel {
@@ -29,7 +29,7 @@ struct Color {
 
 class Chunk {
     public:
-        Chunk();
+        Chunk(int chunkSize);
         ~Chunk();
         void updateSdf(GLuint computeShader, glm::mat4 sun_tansformation);
         void updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm::mat4 sun_tansformation);
@@ -49,4 +49,5 @@ class Chunk {
         int _X;
         int _Y;
         int _Z;
+        int _chunkSize;
 };

@@ -19,8 +19,9 @@ Frame::~Frame()
     std::cout << LOG_FRAME("Frame destructor");
 }
 
-void Frame::init()
+void Frame::init(std::string path, int chunkSize, int debug)
 {
+    _chunkSize = chunkSize;
     std::cout << LOG_FRAME("Initializing GLFW");
     if (!glfwInit()) {
         fprintf( stderr, "Failed to initialize GLFW\n" );
@@ -53,7 +54,7 @@ void Frame::init()
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    _voxelRenderer.init(_window);
+    _voxelRenderer.init(_window, path, _chunkSize, debug);
     _textRenderer.init(_window);
 }
 

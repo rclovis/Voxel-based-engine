@@ -14,12 +14,14 @@ uniform mat4 sun_transformation;
 uniform vec3 camera_position;
 uniform vec3 size;
 uniform int nbrTexture;
+uniform int distanceDisplayv;
 
 out vec3 cameraPosition;
 out mat4 cameraDirection;
 out mat4 sunTransformaton;
 out vec3 sizeTexutre;
 out flat int numberOfTextures;
+out flat int distanceDisplay;
 
 void main()
 {
@@ -30,4 +32,5 @@ void main()
     sunTransformaton = sun_transformation;
     sizeTexutre = size;
     numberOfTextures = nbrTexture;
+    distanceDisplay = distanceDisplayv;
 }

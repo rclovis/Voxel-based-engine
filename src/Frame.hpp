@@ -18,7 +18,7 @@ class Frame {
     public:
         Frame();
         ~Frame();
-        void init();
+        void init(std::string path, int chunkSize, int debug);
         void run();
         void input();
 
@@ -26,5 +26,6 @@ class Frame {
         GLFWwindow* _window;
         TextRenderer _textRenderer;
         VoxelRenderer _voxelRenderer;
+        int _chunkSize;
 
 };

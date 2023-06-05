@@ -5,6 +5,7 @@ in mat4 cameraDirection;
 in mat4 sunTransformaton;
 in vec3 sizeTexutre;
 in flat int numberOfTextures;
+in flat int distanceDisplay;
 out vec4 fragColor;
 
 uniform usampler3D voxelTexture[30];
@@ -15,8 +16,7 @@ uniform colorPalette {
 };
 
 const float VOXEL_SIZE = 10;
-const int MAX_RAY_STEPS = 200;
-const bool distanceDisplay = false;
+const int MAX_RAY_STEPS = 400;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
@@ -56,7 +56,7 @@ ivec3 rayIsIntersectingTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float 
 float moveRayToTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float cubeSize) {
     float tmin = 0;
     float tmax = MAX_RAY_STEPS * VOXEL_SIZE;
-    rayOrigin -= cubePos * VOXEL_SIZE;
+    rayOrigin -= cubePos * (VOXEL_SIZE);
 
     for (int i = 0; i < 3; i++) {
         if (abs(rayDir[i]) < 1e-6) {
@@ -82,7 +82,7 @@ float moveRayToTexture(vec3 rayDir, vec3 rayOrigin, vec3 cubePos, float cubeSize
             }
         }
     }
-    return tmin - VOXEL_SIZE;
+    return tmin;
 }
 
 uvec4 fetchData (ivec3 mapPos, vec3 rayDir) {
@@ -217,7 +217,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
         uvec4 sdf = fetchData(mapPos, rayDir);
         numberOfChecks++;
         if (sdf.r == 0) {
-            if (distanceDisplay)
+            if (distanceDisplay == 1)
                 return mix(computeColor (mapPos, rayPos, mask, steps), vec4(1, 0, 0, 1),  float(numberOfChecks) / float(numberOfJump));
             else
                 return computeColor (mapPos, rayPos, mask, steps);
@@ -253,7 +253,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
             u++;
         }
     }
-    if (distanceDisplay)
+    if (distanceDisplay == 1)
         return mix(vec4(0, 0, 0, 0), vec4(1, 0, 0, 1),  float(numberOfChecks) / float(numberOfJump));
     else
         return vec4(0, 0, 0, 0);
@@ -266,7 +266,6 @@ void main()
         vec4(vec4(fragPosition, 0.0, 1.0) * cameraDirection).xyz
         - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz
     );
-    float T[] = float[](MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE, MAX_RAY_STEPS * VOXEL_SIZE);
     float minT = MAX_RAY_STEPS * VOXEL_SIZE;
     for (int i = 0;i < 8;i++) {
         float tmp = moveRayToTexture(rayDirection, cameraPosition, vec3(voxelTexturePosition[i]), sizeTexutre.x * VOXEL_SIZE);

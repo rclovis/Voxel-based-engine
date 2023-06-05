@@ -1,8 +1,9 @@
 #include "Chunk.hpp"
 
-Chunk::Chunk()
+Chunk::Chunk(int chunkSize)
 {
-    _voxels = std::vector<Voxel>(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, {SDF_LIMIT, 0, 0, 0});
+    _chunkSize = chunkSize;
+    _voxels = std::vector<Voxel>(_chunkSize * _chunkSize * _chunkSize, {SDF_LIMIT, 0, 0, 0});
 }
 
 Chunk::~Chunk()
@@ -23,10 +24,10 @@ void Chunk::updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, _colorPalette);
 
     glUniformMatrix4fv(glGetUniformLocation(computeShader, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
-    glUniform3f(glGetUniformLocation(computeShader, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform3f(glGetUniformLocation(computeShader, "size"), _chunkSize, _chunkSize, _chunkSize);
     glUniform1i(glGetUniformLocation(computeShader, "sdf"), 0);
 
-    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glDispatchCompute(_chunkSize, _chunkSize, _chunkSize);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
@@ -47,15 +48,15 @@ void Chunk::updateShadows(GLuint computeShader, GLuint computeShaderAverage, glm
     glBindTexture(GL_TEXTURE_3D, _textureSDF);
 
     glUniformMatrix4fv(glGetUniformLocation(computeShaderAverage, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
-    glUniform3f(glGetUniformLocation(computeShaderAverage, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform3f(glGetUniformLocation(computeShaderAverage, "size"), _chunkSize, _chunkSize, _chunkSize);
     glUniform1i(glGetUniformLocation(computeShaderAverage, "stepNo"), 0);
 
-    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glDispatchCompute(_chunkSize, _chunkSize, _chunkSize);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glUniform1i(glGetUniformLocation(computeShaderAverage, "stepNo"), 1);
 
-    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glDispatchCompute(_chunkSize, _chunkSize, _chunkSize);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
@@ -73,10 +74,10 @@ void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
     glBindTexture(GL_TEXTURE_3D, _textureSDF);
 
     glUniformMatrix4fv(glGetUniformLocation(computeShader, "sunTransformation"), 1, GL_FALSE, &sun_tansformation[0][0]);
-    glUniform3f(glGetUniformLocation(computeShader, "size"), CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glUniform3f(glGetUniformLocation(computeShader, "size"), _chunkSize, _chunkSize, _chunkSize);
     glUniform1i(glGetUniformLocation(computeShader, "sdf"), 1);
 
-    glDispatchCompute(CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE);
+    glDispatchCompute(_chunkSize, _chunkSize, _chunkSize);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     glActiveTexture(GL_TEXTURE0);
@@ -89,13 +90,12 @@ void Chunk::updateSdf(GLuint computeShader, glm::mat4 sun_tansformation)
 
 void Chunk::loadData()
 {
-
-    for (int z = 0; z < CHUNK_SIZE; z++) {
-        for (int y = 0; y < CHUNK_SIZE; y++) {
-            for (int x = 0; x < CHUNK_SIZE; x++) {
-                int index = x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE;
+    for (int z = 0; z < _chunkSize; z++) {
+        for (int y = 0; y < _chunkSize; y++) {
+            for (int x = 0; x < _chunkSize; x++) {
+                int index = x + y * _chunkSize + z * _chunkSize * _chunkSize;
                 int tmp1 = std::min(std::min(x, y), z) + 1;
-                int tmp2 = std::min(std::min(CHUNK_SIZE - x, CHUNK_SIZE - y), CHUNK_SIZE - z);
+                int tmp2 = std::min(std::min(_chunkSize - x, _chunkSize - y), _chunkSize - z);
                 int tmp3 = std::min(tmp1, tmp2);
                 if (tmp3 < SDF_LIMIT) _voxels[index].distance = tmp3;
                 // printf("%d ", _voxels[index].distance);
@@ -114,17 +114,17 @@ void Chunk::loadData()
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8UI, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RGBA_INTEGER,  GL_UNSIGNED_BYTE, _voxels.data());
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8UI, _chunkSize, _chunkSize, _chunkSize, 0, GL_RGBA_INTEGER,  GL_UNSIGNED_BYTE, _voxels.data());
     glBindImageTexture(0, _textureInfo, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
     glBindTexture(GL_TEXTURE_3D, 0);
 
 
-    std::vector<int> distance(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, SDF_LIMIT);
+    std::vector<int> distance(_chunkSize * _chunkSize * _chunkSize, SDF_LIMIT);
 
-    for (int z = 0; z < CHUNK_SIZE; z++) {
-        for (int y = 0; y < CHUNK_SIZE; y++) {
-            for (int x = 0; x < CHUNK_SIZE; x++) {
-                int index = x + y * CHUNK_SIZE + z * CHUNK_SIZE * CHUNK_SIZE;
+    for (int z = 0; z < _chunkSize; z++) {
+        for (int y = 0; y < _chunkSize; y++) {
+            for (int x = 0; x < _chunkSize; x++) {
+                int index = x + y * _chunkSize + z * _chunkSize * _chunkSize;
                 distance[index] = _voxels[index].distance;
             }
             // printf("\n");
@@ -140,7 +140,7 @@ void Chunk::loadData()
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32I, CHUNK_SIZE, CHUNK_SIZE, CHUNK_SIZE, 0, GL_RED_INTEGER, GL_INT, distance.data());
+    glTexImage3D(GL_TEXTURE_3D, 0, GL_R32I, _chunkSize, _chunkSize, _chunkSize, 0, GL_RED_INTEGER, GL_INT, distance.data());
     glBindImageTexture(1, _textureSDF, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32I);
     glBindTexture(GL_TEXTURE_3D, 0);
 }
@@ -169,7 +169,7 @@ void Chunk::unbindTextures()
 
 void Chunk::setVoxel (int x, int y, int z, Voxel voxel)
 {
-    _voxels[z * CHUNK_SIZE * CHUNK_SIZE + y * CHUNK_SIZE + x] = voxel;
+    _voxels[z * _chunkSize * _chunkSize + y * _chunkSize + x] = voxel;
 }
 
 void Chunk::setPalette (std::vector<unsigned int> palette)
