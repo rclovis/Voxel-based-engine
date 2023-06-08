@@ -41,4 +41,10 @@ Once the program is running, you can navigate through the 3D rendering using the
 
 Shadown are not shared among chunks and only 4 chunks can be rendered at the same time (this is due to a limitation in opengl and shaders)
 
+## Images
+
+![image](images/1.png)
+![image](images/2.png)
+![image](images/3.png)
+
 Happy rendering!
