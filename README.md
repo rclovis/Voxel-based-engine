@@ -43,8 +43,8 @@ Shadown are not shared among chunks and only 4 chunks can be rendered at the sam
 
 ## Images
 
-![image](images/1.png)
-![image](images/2.png)
-![image](images/3.png)
+![image](image/1.png)
+![image](image/2.png)
+![image](image/3.png)
 
 Happy rendering!
