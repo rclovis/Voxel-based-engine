@@ -16,7 +16,7 @@ uniform colorPalette {
 };
 
 const float VOXEL_SIZE = 10;
-const int MAX_RAY_STEPS = 400;
+const int MAX_RAY_STEPS = 200;
 
 vec3 sunPosition = (vec4(0, 0, 1, 1) * sunTransformaton).xyz;
 
@@ -116,7 +116,8 @@ uvec4 fetchData (ivec3 mapPos, vec3 rayDir) {
     return uvec4(1, 0, 0, 0);
 }
 
-vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
+vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps)
+{
     ivec3 mapPos = ivec3(rayPos);
     vec3 deltaDist = abs(vec3(1.0) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
@@ -128,7 +129,7 @@ vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
         if (sdf.r == 0) {
             vec4 val = unpackUnorm4x8(colorData[sdf.g]);
             if (val.w != opacity) {
-                return vec4(val.rgb * sdf.b / 255.0, 1);
+                return vec4(val.rgb * (sdf.b / 255.0 + 0.2), 1);
             }
             multiplicator = 1;
         } else {
@@ -194,13 +195,11 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
     float shadow = 1;
     float light = (fetchData(mapPos + mask, ivec3(0, 0, 0)).b) / 255.0;
     float diffuse = max(0, dot(sunPosition, vec3(mask))) * 1.1;
-    if (light < 0.15) light = 0.15;
-    if (diffuse < 0.15) diffuse = 0.15;
-    shadow = diffuse * light;
+    shadow = diffuse * light + 0.2;
     return vec4(finalColor.rgb * shadow, 1);
 }
 
-vec4 raycast(vec3 rayPos, vec3 rayDir)
+vec4 raycast(vec3 rayPos, vec3 rayDir, int maxSteps)
 {
     rayPos = rayPos / VOXEL_SIZE;
     ivec3 mapPos = ivec3(rayPos);
@@ -209,7 +208,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir)
     vec3 sideDist = (sign(rayDir) * (vec3(mapPos) - rayPos) + (sign(rayDir) * 0.5) + 0.5) * deltaDist;
     ivec3 mask = ivec3(0, 0, 0);
     int multiplicator = 1;
-    int steps = MAX_RAY_STEPS;
+    int steps = maxSteps;
     int numberOfChecks = 0;
     int numberOfJump = 0;
 
@@ -271,8 +270,8 @@ void main()
         float tmp = moveRayToTexture(rayDirection, cameraPosition, vec3(voxelTexturePosition[i]), sizeTexutre.x * VOXEL_SIZE);
         if (tmp < minT) minT = tmp;
     }
-    if (minT != MAX_RAY_STEPS * VOXEL_SIZE)
-        fragColor = raycast(cameraPosition + rayDirection * minT, rayDirection);
+    if (minT == 0)
+        fragColor = raycast(cameraPosition, rayDirection, MAX_RAY_STEPS);
     else
-        fragColor = raycast(cameraPosition, rayDirection);
+        fragColor = raycast(cameraPosition + rayDirection * (minT), rayDirection, int(MAX_RAY_STEPS - minT / VOXEL_SIZE));
 }

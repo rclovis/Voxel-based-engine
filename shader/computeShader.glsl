@@ -12,8 +12,6 @@ layout (location = 0) uniform mat4 sunTransformation;
 layout (location = 1) uniform vec3 size;
 layout (location = 2) uniform int sdf;
 
-
-const float VOXEL_SIZE = 5;
 const int MAX_RAY_STEPS = 400;
 const int SDF_LIMIT = 7;
 

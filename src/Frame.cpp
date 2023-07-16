@@ -61,8 +61,6 @@ void Frame::init(std::string path, int chunkSize, int debug)
 void Frame::run()
 {
     std::cout << LOG_FRAME("Running");
-
-
     auto currentFrameTime = std::chrono::high_resolution_clock::now();
     int frameCount = 0;
 
@@ -76,7 +74,7 @@ void Frame::run()
 
     while (!glfwWindowShouldClose(_window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+        glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
 
         glQueryCounter(query[0], GL_TIMESTAMP);
         _voxelRenderer.draw();
@@ -96,12 +94,7 @@ void Frame::run()
         }
         _textRenderer.renderText(renderTime);
         _textRenderer.renderText(frame);
-        // printf("%s\n", renderTime.text.c_str());
-        // printf("%s\n", frame.text.c_str());
-
-
         glfwSwapBuffers(_window);
-        // glfwPollEvents();
         input();
     }
 }
