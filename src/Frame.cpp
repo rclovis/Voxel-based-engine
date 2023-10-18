@@ -19,7 +19,7 @@ Frame::~Frame()
     std::cout << LOG_FRAME("Frame destructor");
 }
 
-void Frame::init(std::string path, int chunkSize, int debug)
+void Frame::init(int chunkSize, int debug)
 {
     _chunkSize = chunkSize;
     std::cout << LOG_FRAME("Initializing GLFW");
@@ -54,8 +54,9 @@ void Frame::init(std::string path, int chunkSize, int debug)
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    _voxelRenderer.init(_window, path, _chunkSize, debug);
+    _voxelRenderer.init(_window, _chunkSize, debug);
     _textRenderer.init(_window);
+    _voxLoader = std::unique_ptr<VoxLoader>(new VoxLoader(&_voxelRenderer));
 }
 
 void Frame::run()
@@ -103,4 +104,9 @@ void Frame::input()
 {
     if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(_window, true);
+}
+
+void Frame::loadVoxFile(std::string path)
+{
+    _voxLoader->loadVox(path.c_str());
 }

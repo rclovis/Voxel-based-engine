@@ -20,6 +20,7 @@ OPENGL_SOURCES
     src/Frame.cpp
     src/TextRenderer.cpp
     src/Chunk.cpp
+    src/VoxLoader.cpp
 )
 
 set(

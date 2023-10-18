@@ -27,7 +27,8 @@ int main(int ac, char **av)
             return 84;
         }
         Frame frame;
-        frame.init(av[1], chunkSize, debug);
+        frame.init(chunkSize, debug);
+        frame.loadVoxFile(av[1]);
         frame.run();
     }
     return 0;

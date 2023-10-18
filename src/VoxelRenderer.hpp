@@ -26,13 +26,16 @@ class VoxelRenderer
     public:
         VoxelRenderer();
         ~VoxelRenderer();
-        void init(GLFWwindow* window, std::string path, int chunkSize, int debug);
+        void init(GLFWwindow* window, int chunkSize, int debug);
         void initCamera();
         void updateCamera();
         void draw();
         void moveSun();
-        std::vector<Chunk*> voxelDataToChunks (std::vector<Voxel> voxels, int sizeX, int sizeY, int sizeZ, std::vector<unsigned int> colors);
-        std::vector<Chunk*> loadVox(const char *path);
+        void setPalette(std::vector<uint32_t> palette);
+        void loadChunks();
+        void updateShadows();
+        Chunk* createChunk();
+        int getChunkSize() {return _chunkSize;}
 
     protected:
         std::map<char, std::vector<std::string>> _assets;
