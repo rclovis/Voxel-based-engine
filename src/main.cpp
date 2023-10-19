@@ -1,10 +1,3 @@
-/*
-** EPITECH PROJECT, 2023
-** voxel opengl
-** File description:
-** main
-*/
-
 #include "Frame.hpp"
 
 int main(int ac, char **av)

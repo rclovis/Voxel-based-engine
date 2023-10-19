@@ -1,10 +1,3 @@
-/*
-** EPITECH PROJECT, 2023
-** voxel opengl
-** File description:
-** Text
-*/
-
 #include "TextRenderer.hpp"
 
 TextRenderer::TextRenderer()

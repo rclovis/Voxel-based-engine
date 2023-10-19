@@ -9,12 +9,13 @@ vec2 positions[6] = vec2[](
     vec2(-1.0,  1.0)
 );
 
-uniform mat3 MVP;
-uniform mat4 sun_transformation;
-uniform vec3 camera_position;
-uniform vec3 size;
-uniform int nbrTexture;
-uniform int distanceDisplayv;
+uniform vec3 _cameraPosition;
+uniform mat3 _cameraDirection;
+uniform mat4 _sunTransformaton;
+uniform vec3 _sizeTexutre;
+uniform int _numberOfTextures;
+uniform int _distanceDisplay;
+uniform float _fov;
 
 out vec3 cameraPosition;
 out mat3 cameraDirection;
@@ -22,15 +23,17 @@ out mat4 sunTransformaton;
 out vec3 sizeTexutre;
 out flat int numberOfTextures;
 out flat int distanceDisplay;
+out flat float fov;
 
 void main()
 {
     gl_Position = vec4(positions[gl_VertexID], 0.0, 1.0);
 
-    cameraPosition = camera_position;
-    cameraDirection = MVP;
-    sunTransformaton = sun_transformation;
-    sizeTexutre = size;
-    numberOfTextures = nbrTexture;
-    distanceDisplay = distanceDisplayv;
+    cameraPosition = _cameraPosition;
+    cameraDirection = _cameraDirection;
+    sunTransformaton = _sunTransformaton;
+    sizeTexutre = _sizeTexutre;
+    numberOfTextures = _numberOfTextures;
+    distanceDisplay = _distanceDisplay;
+    fov = _fov;
 }

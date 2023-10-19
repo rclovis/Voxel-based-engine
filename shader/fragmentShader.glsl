@@ -6,6 +6,7 @@ in mat4 sunTransformaton;
 in vec3 sizeTexutre;
 in flat int numberOfTextures;
 in flat int distanceDisplay;
+in flat float fov;
 out vec4 fragColor;
 
 uniform usampler3D voxelTexture[30];
@@ -258,7 +259,7 @@ vec4 raycast(vec3 rayPos, vec3 rayDir, int maxSteps)
 
 vec3 getRay(vec2 fragPosition)
 {
-    float fovRad = 90. * (3.1415926535897932384626433832795 / 180.);
+    float fovRad = fov * (3.1415926535897932384626433832795 / 180.);
 
     float size = max(1024, 768);
     int offset = abs(1024 - 768) / 2;
