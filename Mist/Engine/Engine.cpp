@@ -1,18 +1,18 @@
-#include "Frame.hpp"
+#include "Engine.hpp"
 
-Frame::Frame()
+Engine::Engine()
 {
     _window = nullptr;
 }
 
-Frame::~Frame()
+Engine::~Engine()
 {
     glfwDestroyWindow(_window);
     glfwTerminate();
-    std::cout << LOG_FRAME("Frame destructor");
+    std::cout << LOG_FRAME("Engine destructor");
 }
 
-void Frame::init(int chunkSize, int debug)
+void Engine::init(int chunkSize, int debug)
 {
     _chunkSize = chunkSize;
     std::cout << LOG_FRAME("Initializing GLFW");
@@ -47,12 +47,14 @@ void Frame::init(int chunkSize, int debug)
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    _voxelRenderer.init(_window, _chunkSize, debug);
-    _textRenderer.init(_window);
-    _voxLoader = std::unique_ptr<VoxLoader>(new VoxLoader(&_voxelRenderer));
+    _voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
+    _textRenderer = std::unique_ptr<TextRenderer>(new TextRenderer());
+    _voxelRenderer->init(_window, _chunkSize, debug);
+    _textRenderer->init(_window);
+    _voxLoader = std::unique_ptr<VoxLoader>(new VoxLoader(_voxelRenderer.get()));
 }
 
-void Frame::run()
+void Engine::run()
 {
     std::cout << LOG_FRAME("Running");
     auto currentFrameTime = std::chrono::high_resolution_clock::now();
@@ -63,7 +65,7 @@ void Frame::run()
     GLuint query[2];
     glGenQueries(2, query);
 
-    textInfo_t frame = {"Frame: ", glm::vec3(255.0f, 255.0f, 255.0f), glm::vec2(10.0f, 20.0f), 0.5f};
+    textInfo_t Engine = {"Engine: ", glm::vec3(255.0f, 255.0f, 255.0f), glm::vec2(10.0f, 20.0f), 0.5f};
     textInfo_t renderTime = {"Render time: ", glm::vec3(255.0f, 255.0f, 255.0f), glm::vec2(10.0f, -20.0f), 0.5f};
 
     while (!glfwWindowShouldClose(_window)) {
@@ -71,8 +73,8 @@ void Frame::run()
         glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
 
         glQueryCounter(query[0], GL_TIMESTAMP);
-        _voxelRenderer.draw();
-        _textRenderer.draw();
+        _voxelRenderer->draw();
+        _textRenderer->draw();
         glQueryCounter(query[1], GL_TIMESTAMP);
 
         glGetQueryObjectui64v(query[0], GL_QUERY_RESULT, &start);
@@ -83,23 +85,23 @@ void Frame::run()
         frameCount++;
         if (std::chrono::high_resolution_clock::now() - currentFrameTime >= std::chrono::seconds(1)) {
             currentFrameTime = std::chrono::high_resolution_clock::now();
-            frame.text = "Frame: " + std::to_string(frameCount);
+            Engine.text = "Engine: " + std::to_string(frameCount);
             frameCount = 0;
         }
-        _textRenderer.renderText(renderTime);
-        _textRenderer.renderText(frame);
+        _textRenderer->renderText(renderTime);
+        _textRenderer->renderText(Engine);
         glfwSwapBuffers(_window);
         input();
     }
 }
 
-void Frame::input()
+void Engine::input()
 {
     if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(_window, true);
 }
 
-void Frame::loadVoxFile(std::string path)
+void Engine::loadVoxFile(std::string path)
 {
     _voxLoader->loadVox(path.c_str());
 }

@@ -11,10 +11,8 @@
 #include <unordered_map>
 #include "Chunk.hpp"
 #include "Camera.hpp"
-
-
-GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
-GLuint LoadComputeShader (const char * computePath);
+#include "Shader.hpp"
+#include <unistd.h>
 
 struct sizeChunk {
   int x;

@@ -1,5 +1,4 @@
 #include "VoxelRenderer.hpp"
-#include <unistd.h>
 
 #define WINDOW_WIDTH 1024
 #define WINDOW_HEIGHT 768
@@ -28,9 +27,9 @@ void VoxelRenderer::init(GLFWwindow* window, int chunkSize, int debug)
     glBindVertexArray(_VAO);
     _chunkSize = chunkSize;
 
-    _shaderProgram = LoadShaders("shader/vertexShader.glsl", "shader/fragmentShader.glsl");
-    _computeShader = LoadComputeShader("shader/computeShader.glsl");
-    _computeShaderAverage = LoadComputeShader("shader/averageShadows.glsl");
+    _shaderProgram = Shader::LoadShaders("Mist/shader/vertexShader.glsl", "Mist/shader/fragmentShader.glsl");
+    _computeShader = Shader::LoadComputeShader("Mist/shader/computeShader.glsl");
+    _computeShaderAverage = Shader::LoadComputeShader("Mist/shader/averageShadows.glsl");
     _sun_tansformation = glm::mat4(1.0f);
 }
 
