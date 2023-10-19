@@ -21,6 +21,7 @@ OPENGL_SOURCES
     src/TextRenderer.cpp
     src/Chunk.cpp
     src/VoxLoader.cpp
+    src/Camera/Camera.cpp
 )
 
 set(
@@ -42,6 +43,8 @@ target_compile_options(renderer PRIVATE ${GPP_OPTIONS})
 
 
 target_include_directories(renderer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+target_include_directories(renderer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(renderer PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src/Camera)
 
 target_link_libraries(renderer PRIVATE ${OPENGL_LIBRARIES})
 target_link_libraries(renderer PRIVATE ${FREETYPE_LIBRARIES})

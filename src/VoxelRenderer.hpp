@@ -10,6 +10,7 @@
 #include <logger.hpp>
 #include <unordered_map>
 #include "Chunk.hpp"
+#include "Camera.hpp"
 
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
@@ -27,8 +28,6 @@ class VoxelRenderer
         VoxelRenderer();
         ~VoxelRenderer();
         void init(GLFWwindow* window, int chunkSize, int debug);
-        void initCamera();
-        void updateCamera();
         void draw();
         void moveSun();
         void setPalette(std::vector<uint32_t> palette);
@@ -49,21 +48,12 @@ class VoxelRenderer
         GLuint _computeShaderAverage;
         GLuint _textureArray;
 
-        glm::mat4 _proj;
-        glm::mat4 _view;
-        glm::mat4 _model;
-        glm::mat4 _projection;
         glm::mat4 _sun_tansformation;
-
-        glm::vec3 _camera_position;
-        glm::vec3 _camera_direction;
-        glm::vec3 _up_vector;
-
         std::vector<Chunk*> _chunks;
 
-        double _last_x;
-        double _last_y;
         int _chunkSize;
         int _debug;
+
+        Camera _camera;
 };
 

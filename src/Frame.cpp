@@ -1,10 +1,3 @@
-/*
-** EPITECH PROJECT, 2023
-** voxel opengl
-** File description:
-** Frame
-*/
-
 #include "Frame.hpp"
 
 Frame::Frame()
