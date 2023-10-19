@@ -49,10 +49,7 @@ class VoxelRenderer
         GLuint _computeShaderAverage;
         GLuint _textureArray;
 
-        glm::mat4 _proj;
-        glm::mat4 _view;
-        glm::mat4 _model;
-        glm::mat4 _projection;
+        glm::mat3 _rotationMatrix;
         glm::mat4 _sun_tansformation;
 
         glm::vec3 _camera_position;

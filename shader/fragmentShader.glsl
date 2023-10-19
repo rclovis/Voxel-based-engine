@@ -1,7 +1,7 @@
 #version 430 core
 
 in vec3 cameraPosition;
-in mat4 cameraDirection;
+in mat3 cameraDirection;
 in mat4 sunTransformaton;
 in vec3 sizeTexutre;
 in flat int numberOfTextures;
@@ -116,8 +116,7 @@ uvec4 fetchData (ivec3 mapPos, vec3 rayDir) {
     return uvec4(1, 0, 0, 0);
 }
 
-vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps)
-{
+vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps) {
     ivec3 mapPos = ivec3(rayPos);
     vec3 deltaDist = abs(vec3(1.0) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
@@ -162,8 +161,7 @@ vec4 raycastReflect(vec3 rayPos, vec3 rayDir, float opacity, int steps)
     return vec4(0, 0, 0, 0);
 }
 
-vec4 SpecularShading (vec3 reflect_ray, ivec3 texel_pos)
-{
+vec4 SpecularShading (vec3 reflect_ray, ivec3 texel_pos) {
     float specular = 0;
     if (fetchData(texel_pos, ivec3(0, 0, 0)).b > 100) {
         specular = pow(max(0, dot(reflect_ray, normalize(sunPosition))), 32);
@@ -258,13 +256,31 @@ vec4 raycast(vec3 rayPos, vec3 rayDir, int maxSteps)
         return vec4(0, 0, 0, 0);
 }
 
+vec3 getRay(vec2 fragPosition)
+{
+    float fovRad = 90. * (3.1415926535897932384626433832795 / 180.);
+
+    float size = max(1024, 768);
+    int offset = abs(1024 - 768) / 2;
+    if (1024 > 768) {
+        fragPosition.y += offset;
+    } else {
+        fragPosition.x += offset;
+    }
+    float ndcX = (2. * fragPosition.x) / size - 1.;
+    float ndcY = (2. * fragPosition.y) / size - 1.;
+
+    // Calculate direction vector in camera space looking to Y+
+    float dirX = ndcX * tan(fovRad / 2.);
+    float dirY = ndcY * tan(fovRad / 2.);
+    float dirZ = -1.;
+    return vec3(dirX, dirY, dirZ) * cameraDirection;
+}
+
 void main()
 {
     vec2 fragPosition = gl_FragCoord.xy;
-    vec3 rayDirection = normalize(
-        vec4(vec4(fragPosition, 0.0, 1.0) * cameraDirection).xyz
-        - vec4(vec4(1024 / 2, 768 / 2, -1000.0, 1.0) * cameraDirection).xyz
-    );
+    vec3 rayDirection = getRay(fragPosition);
     float minT = MAX_RAY_STEPS * VOXEL_SIZE;
     for (int i = 0;i < 8;i++) {
         float tmp = moveRayToTexture(rayDirection, cameraPosition, vec3(voxelTexturePosition[i]), sizeTexutre.x * VOXEL_SIZE);

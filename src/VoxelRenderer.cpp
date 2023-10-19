@@ -16,9 +16,6 @@ VoxelRenderer::VoxelRenderer()
     _window = NULL;
     _VAO = 0;
     _shaderProgram = 0;
-    _camera_position = glm::vec3(0, 0, 0);
-    _camera_direction = glm::vec3(0, 0, -1);
-    _up_vector = glm::vec3(0, 1, 0);
 }
 
 void VoxelRenderer::init(GLFWwindow* window, int chunkSize, int debug)
@@ -52,7 +49,7 @@ void VoxelRenderer::draw ()
     for (size_t i = 0;i < _chunks.size();i++) {
         _chunks[i]->bindTextures(_shaderProgram, i);
     }
-    glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "MVP"), 1, GL_FALSE, &_proj[0][0]);
+    glUniformMatrix3fv(glGetUniformLocation(_shaderProgram, "MVP"), 1, GL_FALSE, &_rotationMatrix[0][0]);
     glUniformMatrix4fv(glGetUniformLocation(_shaderProgram, "sun_transformation"), 1, GL_FALSE, &_sun_tansformation[0][0]);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_position"), _camera_position.x, _camera_position.y, _camera_position.z);
     glUniform3f(glGetUniformLocation(_shaderProgram, "camera_direction"), _camera_direction.x, _camera_direction.y, _camera_direction.z);
@@ -90,7 +87,6 @@ void VoxelRenderer::moveSun ()
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage,_sun_tansformation);
     }
-    // glm::vec4 sun_pos = glm::vec4(0, 0, 1, 1) * _sun_tansformation;
 }
 
 void VoxelRenderer::updateCamera ()
@@ -144,10 +140,7 @@ void VoxelRenderer::updateCamera ()
 		_camera_position -= _up_vector * camera_speed;
 	}
 
-    _view = glm::lookAt(_camera_position, _camera_position + _camera_direction, _up_vector);
-    glm::mat4 Model = glm::mat4(1.0f);
-	_projection = glm::perspective(glm::radians(45.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-    _proj = _projection * _view * Model;
+    _rotationMatrix = glm::mat3(glm::lookAt(glm::vec3(0.0f), _camera_direction, _up_vector));
 }
 
 Chunk* VoxelRenderer::createChunk()
