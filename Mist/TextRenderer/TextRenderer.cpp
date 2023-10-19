@@ -1,4 +1,5 @@
 #include "TextRenderer.hpp"
+#include <ft2build.h>
 
 TextRenderer::TextRenderer()
 {

@@ -1,4 +1,4 @@
-#include "Frame.hpp"
+#include <mist.hpp>
 
 int main(int ac, char **av)
 {
@@ -19,7 +19,7 @@ int main(int ac, char **av)
             std::cout << "Usage: ./renderer path_to_vox_file chunk_size" << std::endl;
             return 84;
         }
-        Frame frame;
+        Engine frame;
         frame.init(chunkSize, debug);
         frame.loadVoxFile(av[1]);
         frame.run();
