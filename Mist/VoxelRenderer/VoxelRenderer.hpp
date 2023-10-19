@@ -14,10 +14,6 @@
 #include "Shader.hpp"
 #include <unistd.h>
 
-
-GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
-GLuint LoadComputeShader (const char * computePath);
-
 struct sizeChunk {
   int x;
   int y;

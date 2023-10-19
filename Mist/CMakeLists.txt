@@ -28,14 +28,6 @@ target_include_directories(mist PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/TextRenderer)
 target_include_directories(mist PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/VoxelRenderer)
 target_include_directories(mist PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/VoxelRenderer/Camera)
 target_include_directories(mist PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/VoxelRenderer/Chunk)
-# FILEPATH: /home/rclovis/Perso/Voxel-based-engine/Mist/CMakeLists.txt
-
-# Copy assets directory to build directory
-message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shader DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/../)
-
-# ... rest of your CMake code
 
 target_link_libraries(mist PUBLIC ${OPENGL_LIBRARIES})
 target_link_libraries(mist PUBLIC ${FREETYPE_LIBRARIES})

@@ -19,10 +19,10 @@ int main(int ac, char **av)
             std::cout << "Usage: ./renderer path_to_vox_file chunk_size" << std::endl;
             return 84;
         }
-        Engine frame;
-        frame.init(chunkSize, debug);
-        frame.loadVoxFile(av[1]);
-        frame.run();
+        Engine engine;
+        engine.init(chunkSize, debug);
+        engine.loadVoxFile(av[1]);
+        engine.run();
     }
     return 0;
 }

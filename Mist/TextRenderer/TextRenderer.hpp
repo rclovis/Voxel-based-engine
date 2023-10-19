@@ -10,9 +10,6 @@
 #include "logger.hpp"
 #include "Shader.hpp"
 
-GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
-GLuint LoadComputeShader (const char * computePath);
-
 typedef struct {
     std::string text;
     glm::vec3 color;
