@@ -1,5 +1,4 @@
 #include "TextRenderer.hpp"
-#include <ft2build.h>
 
 TextRenderer::TextRenderer()
 {
@@ -22,7 +21,7 @@ void TextRenderer::init(GLFWwindow* window)
 {
     std::cout << LOG_TEXT("Init TextRenderer");
     _window = window;
-    _shaderProgram = LoadShaders("shader/textVertexShader.glsl", "shader/textFragmentShader.glsl");
+    _shaderProgram = Shader::LoadShaders("shader/textVertexShader.glsl", "shader/textFragmentShader.glsl");
 
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {

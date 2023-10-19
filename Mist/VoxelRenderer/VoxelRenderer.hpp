@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include "Chunk.hpp"
 #include "Camera.hpp"
+#include "Shader.hpp"
+#include <unistd.h>
 
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);

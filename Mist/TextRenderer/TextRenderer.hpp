@@ -8,6 +8,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include "logger.hpp"
+#include "Shader.hpp"
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path);
 GLuint LoadComputeShader (const char * computePath);

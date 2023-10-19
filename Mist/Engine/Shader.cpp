@@ -1,13 +1,6 @@
-#include <iostream>
-#include <vector>
-#include <sstream>
-#include <fstream>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
+#include "Shader.hpp"
 
-
-GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
+GLuint Shader::LoadShaders(const char * vertex_file_path,const char * fragment_file_path)
 {
     // Create the shaders
     GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -90,7 +83,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
 }
 
 
-GLuint LoadComputeShader (const char * computePath)
+GLuint Shader::LoadComputeShader (const char * computePath)
 {
     // Create the shaders
     GLuint ComputeShaderID = glCreateShader(GL_COMPUTE_SHADER);
