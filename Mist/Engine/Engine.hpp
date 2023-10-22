@@ -13,7 +13,7 @@ class Engine {
     public:
         Engine();
         ~Engine();
-        void init(int chunkSize, int debug);
+        void init(int chunkSize);
         void run();
         void input();
         void loadVoxFile(std::string path);

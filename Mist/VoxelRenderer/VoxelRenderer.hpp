@@ -25,14 +25,16 @@ class VoxelRenderer
     public:
         VoxelRenderer();
         ~VoxelRenderer();
-        void init(GLFWwindow* window, int chunkSize, int debug);
+        void init(GLFWwindow* window, int chunkSize);
         void draw();
-        void moveSun();
         void setPalette(std::vector<uint32_t> palette);
         void loadChunks();
         void updateShadows();
         Chunk* createChunk();
         int getChunkSize() {return _chunkSize;}
+        void setDebug(int debug) {_debug = debug;}
+        int getDebug() {return _debug;}
+        void eventHandler();
 
     protected:
         std::map<char, std::vector<std::string>> _assets;
@@ -50,8 +52,9 @@ class VoxelRenderer
         std::vector<Chunk*> _chunks;
 
         int _chunkSize;
-        int _debug;
+        int _debug = 0;
 
         Camera _camera;
+
 };
 

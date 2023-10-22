@@ -198,9 +198,9 @@ vec4 computeColor (ivec3 mapPos, vec3 rayPos, ivec3 mask, int steps)
     return vec4(finalColor.rgb * shadow, 1);
 }
 
-vec4 raycast(vec3 rayPos, vec3 rayDir, int maxSteps)
+vec4 raycast(vec3 rayPos, vec3 rayDir, int maxSteps, out float distance)
 {
-    rayPos = rayPos / VOXEL_SIZE;
+    rayPos /= VOXEL_SIZE;
     ivec3 mapPos = ivec3(rayPos);
     vec3 deltaDist = abs(vec3(1.0) / rayDir);
     ivec3 rayStep = ivec3(sign(rayDir));
@@ -215,10 +215,13 @@ vec4 raycast(vec3 rayPos, vec3 rayDir, int maxSteps)
         uvec4 sdf = fetchData(mapPos, rayDir);
         numberOfChecks++;
         if (sdf.r == 0) {
-            if (distanceDisplay == 1)
+            if (distanceDisplay == 1) {
+                distance = length(vec3(mapPos) - rayPos);
                 return mix(computeColor (mapPos, rayPos, mask, steps), vec4(1, 0, 0, 1),  float(numberOfChecks) / float(numberOfJump));
-            else
+            } else {
+                distance = length(vec3(mapPos) - rayPos);
                 return computeColor (mapPos, rayPos, mask, steps);
+            }
         } else {
             multiplicator = int(sdf.r);
             numberOfJump += multiplicator;
@@ -251,10 +254,13 @@ vec4 raycast(vec3 rayPos, vec3 rayDir, int maxSteps)
             u++;
         }
     }
-    if (distanceDisplay == 1)
+    if (distanceDisplay == 1) {
+        distance = length(vec3(mapPos) - rayPos);
         return mix(vec4(0, 0, 0, 0), vec4(1, 0, 0, 1),  float(numberOfChecks) / float(numberOfJump));
-    else
+    } else {
+        distance = length(vec3(mapPos) - rayPos);
         return vec4(0, 0, 0, 0);
+    }
 }
 
 vec3 getRay(vec2 fragPosition)
@@ -287,8 +293,15 @@ void main()
         float tmp = moveRayToTexture(rayDirection, cameraPosition, vec3(voxelTexturePosition[i]), sizeTexutre.x * VOXEL_SIZE);
         if (tmp < minT) minT = tmp;
     }
-    if (minT == 0)
-        fragColor = raycast(cameraPosition, rayDirection, MAX_RAY_STEPS);
-    else
-        fragColor = raycast(cameraPosition + rayDirection * (minT), rayDirection, int(MAX_RAY_STEPS - minT / VOXEL_SIZE));
+    float distance;
+    if (minT == 0) {
+        fragColor = raycast(cameraPosition, rayDirection, MAX_RAY_STEPS, distance);
+        distance /= MAX_RAY_STEPS;
+        fragColor = mix(fragColor, vec4 (distance, distance, distance, 1.), 0.5);
+    } else {
+        fragColor = raycast(cameraPosition + rayDirection * (minT), rayDirection, int(MAX_RAY_STEPS - minT / VOXEL_SIZE), distance);
+        distance += (length(rayDirection) * minT) / VOXEL_SIZE;
+        distance /= MAX_RAY_STEPS ;
+        fragColor = mix(fragColor, vec4 (distance, distance, distance, 1.), 0.5);
+    }
 }

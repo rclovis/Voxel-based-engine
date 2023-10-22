@@ -18,9 +18,8 @@ VoxelRenderer::VoxelRenderer() :
     _shaderProgram = 0;
 }
 
-void VoxelRenderer::init(GLFWwindow* window, int chunkSize, int debug)
+void VoxelRenderer::init(GLFWwindow* window, int chunkSize)
 {
-    _debug = debug;
     std::cout << LOG_VOXEL("Init VoxelRenderer");
     _window = window;
     glGenVertexArrays(1, &_VAO);
@@ -53,15 +52,15 @@ void VoxelRenderer::draw ()
     for (size_t i = 0;i < _chunks.size();i++) {
         _chunks[i]->unbindTextures();
     }
+}
 
+void VoxelRenderer::eventHandler()
+{
+    static bool keyState = false;
     _camera.loadCursor(_window);
     glfwPollEvents();
     _camera.update(_window);
-    moveSun();
-}
 
-void VoxelRenderer::moveSun ()
-{
     if (glfwGetKey(_window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage, _sun_tansformation);
@@ -77,6 +76,14 @@ void VoxelRenderer::moveSun ()
     if (glfwGetKey(_window, GLFW_KEY_DOWN) == GLFW_PRESS) {
         _sun_tansformation = glm::rotate(_sun_tansformation, glm::radians(-1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage,_sun_tansformation);
+    }
+
+    if (glfwGetKey(_window, GLFW_KEY_KP_0) == GLFW_PRESS && !keyState) {
+        _debug = !_debug;
+        keyState = true;
+    }
+    if (glfwGetKey(_window, GLFW_KEY_KP_0) == GLFW_RELEASE) {
+        keyState = false;
     }
 }
 

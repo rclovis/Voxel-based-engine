@@ -12,7 +12,7 @@ Engine::~Engine()
     std::cout << LOG_FRAME("Engine destructor");
 }
 
-void Engine::init(int chunkSize, int debug)
+void Engine::init(int chunkSize)
 {
     _chunkSize = chunkSize;
     std::cout << LOG_FRAME("Initializing GLFW");
@@ -49,7 +49,7 @@ void Engine::init(int chunkSize, int debug)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     _voxelRenderer = std::unique_ptr<VoxelRenderer>(new VoxelRenderer());
     _textRenderer = std::unique_ptr<TextRenderer>(new TextRenderer());
-    _voxelRenderer->init(_window, _chunkSize, debug);
+    _voxelRenderer->init(_window, _chunkSize);
     _textRenderer->init(_window);
     _voxLoader = std::unique_ptr<VoxLoader>(new VoxLoader(_voxelRenderer.get()));
 }
@@ -75,6 +75,7 @@ void Engine::run()
         glQueryCounter(query[0], GL_TIMESTAMP);
         _voxelRenderer->draw();
         _textRenderer->draw();
+        _voxelRenderer->eventHandler();
         glQueryCounter(query[1], GL_TIMESTAMP);
 
         glGetQueryObjectui64v(query[0], GL_QUERY_RESULT, &start);
