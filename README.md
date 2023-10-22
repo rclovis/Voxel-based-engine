@@ -23,12 +23,11 @@ This will create a binary named "renderer" at the root of the repository.
 Launch the program by executing the binary and providing the necessary arguments:
 
 ```
-./renderer <file_path> <chunk_size> <debug_mode>
+./renderer <file_path> <chunk_size>
 ```
 
 - `file_path`: The path to the .vox file you want to render.
 - `chunk_size`: The size of the chunks in the rendering process.
-- `debug_mode`: Set this argument to 0 or 1 to enable or disable debug mode, respectively.
 
 ## Navigation
 
@@ -36,6 +35,7 @@ Once the program is running, you can navigate through the 3D rendering using the
 
 - **Mouse**: Move the mouse to adjust the camera view.
 - **Arrow Keys**: Move the sun in the scene to control lighting and shadows.
+- **Num Key 0**: Enable or disable debug mode.
 
 ## Known limitations
 
