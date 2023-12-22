@@ -70,7 +70,7 @@ void Engine::run()
 
     while (!glfwWindowShouldClose(_window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
+        glClearColor(0.4f, 0.4f, 0.4f, 0.0f);
 
         glQueryCounter(query[0], GL_TIMESTAMP);
         _voxelRenderer->draw();

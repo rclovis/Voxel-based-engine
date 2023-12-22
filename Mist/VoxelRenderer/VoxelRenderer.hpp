@@ -53,6 +53,7 @@ class VoxelRenderer
 
         int _chunkSize;
         int _debug = 0;
+        int _fog = 0;
 
         Camera _camera;
 

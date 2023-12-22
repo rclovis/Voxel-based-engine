@@ -45,6 +45,7 @@ void VoxelRenderer::draw ()
     glUniform3f(glGetUniformLocation(_shaderProgram, "_sizeTexutre"), _chunkSize, _chunkSize, _chunkSize);
     glUniform1i(glGetUniformLocation(_shaderProgram, "_numberOfTextures"), _chunks.size());
     glUniform1i(glGetUniformLocation(_shaderProgram, "_distanceDisplay"), _debug);
+    glUniform1i(glGetUniformLocation(_shaderProgram, "_fogDisplay"), _fog);
     glUniform1f(glGetUniformLocation(_shaderProgram, "_fov"), _camera.getFov());
 
 
@@ -56,7 +57,8 @@ void VoxelRenderer::draw ()
 
 void VoxelRenderer::eventHandler()
 {
-    static bool keyState = false;
+    static bool keyState1 = false;
+    static bool keyState2 = false;
     _camera.loadCursor(_window);
     glfwPollEvents();
     _camera.update(_window);
@@ -78,12 +80,20 @@ void VoxelRenderer::eventHandler()
         for (auto &chunk : _chunks) chunk->updateShadows(_computeShader, _computeShaderAverage,_sun_tansformation);
     }
 
-    if (glfwGetKey(_window, GLFW_KEY_KP_0) == GLFW_PRESS && !keyState) {
+    if (glfwGetKey(_window, GLFW_KEY_1) == GLFW_PRESS && !keyState1) {
         _debug = !_debug;
-        keyState = true;
+        keyState1 = true;
     }
-    if (glfwGetKey(_window, GLFW_KEY_KP_0) == GLFW_RELEASE) {
-        keyState = false;
+    if (glfwGetKey(_window, GLFW_KEY_1) == GLFW_RELEASE) {
+        keyState1 = false;
+    }
+
+    if (glfwGetKey(_window, GLFW_KEY_2) == GLFW_PRESS && !keyState2) {
+        _fog = !_fog;
+        keyState2 = true;
+    }
+    if (glfwGetKey(_window, GLFW_KEY_2) == GLFW_RELEASE) {
+        keyState2 = false;
     }
 }
 

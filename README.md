@@ -35,7 +35,8 @@ Once the program is running, you can navigate through the 3D rendering using the
 
 - **Mouse**: Move the mouse to adjust the camera view.
 - **Arrow Keys**: Move the sun in the scene to control lighting and shadows.
-- **Num Key 0**: Enable or disable debug mode.
+- **Num Key 1**: Enable or disable debug mode.
+- **Num Key 2**: Enable or disable fog.
 
 ## Known limitations
 

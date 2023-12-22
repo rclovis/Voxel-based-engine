@@ -6,6 +6,7 @@ in mat4 sunTransformaton;
 in vec3 sizeTexutre;
 in flat int numberOfTextures;
 in flat int distanceDisplay;
+in flat int fogDisplay;
 in flat float fov;
 out vec4 fragColor;
 
@@ -297,11 +298,15 @@ void main()
     if (minT == 0) {
         fragColor = raycast(cameraPosition, rayDirection, MAX_RAY_STEPS, distance);
         distance /= MAX_RAY_STEPS;
-        fragColor = mix(fragColor, vec4 (distance, distance, distance, 1.), 0.5);
+        if (fogDisplay == 1) {
+            fragColor = mix(fragColor, vec4 (distance, distance, distance, 1.), 0.5);
+        }
     } else {
         fragColor = raycast(cameraPosition + rayDirection * (minT), rayDirection, int(MAX_RAY_STEPS - minT / VOXEL_SIZE), distance);
         distance += (length(rayDirection) * minT) / VOXEL_SIZE;
         distance /= MAX_RAY_STEPS ;
-        fragColor = mix(fragColor, vec4 (distance, distance, distance, 1.), 0.5);
+        if (fogDisplay == 1) {
+            fragColor = mix(fragColor, vec4 (distance, distance, distance, 1.), 0.5);
+        }
     }
 }
